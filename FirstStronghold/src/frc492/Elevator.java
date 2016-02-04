@@ -13,7 +13,8 @@ import frclibj.TrcPidMotor;
 public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
 {
     private static final String moduleName = "Elevator";
-    private CANTalon elevatorMotor;
+    private CANTalon leftMotor;
+    private CANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
     private boolean elevatorOverride = false;
@@ -25,8 +26,8 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
      */
     public Elevator()
     {
-        elevatorMotor = new CANTalon(RobotInfo.CANID_ELEVATOR);
-        elevatorMotor.reverseSensor(true);
+        leftMotor = new CANTalon(RobotInfo.CANID_LEFT_ELEVATOR);
+        rightMotor = new CANTalon(RobotInfo.CANID_RIGHT_ELEVATOR);
         pidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.ELEVATOR_KP,
@@ -37,9 +38,14 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
                 RobotInfo.ELEVATOR_SETTLING,
                 this,
                 TrcPidController.PIDCTRLO_ABS_SETPT);
-        elevatorMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        elevatorMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        pidMotor = new TrcPidMotor(moduleName,elevatorMotor,pidCtrl, this);
+        leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        pidMotor = new TrcPidMotor(
+                moduleName,
+                leftMotor, rightMotor, RobotInfo.ELEVATOR_SYNCGROUP,
+                pidCtrl, this);
         pidMotor.setTargetScale(RobotInfo.ELEVATOR_INCHES_PER_CLICK);
         lastHeight = getHeight();
     }
@@ -116,18 +122,20 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
 
     public double getHeight()
     {
-        return getMotorPosition(elevatorMotor)*
+        return getMotorPosition(leftMotor)*
                RobotInfo.ELEVATOR_INCHES_PER_CLICK;
     }
 
     public boolean isUpperLimitSwitchActive()
     {
-        return !elevatorMotor.isFwdLimitSwitchClosed();
+        return !leftMotor.isFwdLimitSwitchClosed() &&
+               !rightMotor.isFwdLimitSwitchClosed();
     }
 
     public boolean isLowerLimitSwitchActive()
     {
-        return !elevatorMotor.isRevLimitSwitchClosed();
+        return !leftMotor.isRevLimitSwitchClosed() &&
+               !rightMotor.isRevLimitSwitchClosed();
     }
     //
     // Implements TrcDriveBase.MotorPosition.

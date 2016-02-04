@@ -17,7 +17,6 @@ import frclibj.TrcKalmanFilter;
 import frclibj.TrcMotorPosition;
 import frclibj.TrcPidController;
 import frclibj.TrcPidDrive;
-import frclibj.TrcPneumatic;
 import frclibj.TrcRGBLight;
 import frclibj.TrcRobot;
 
@@ -60,11 +59,6 @@ public class Robot
     public CANTalon leftRearMotor;
     public CANTalon rightFrontMotor;
     public CANTalon rightRearMotor;
-    //
-    // Robot Arms
-    //
-    public CANTalon leftArmMotor;
-    public CanTalon rightArmMotor;
     public TrcDriveBase driveBase;
     public TrcPidController xPidCtrl;
     public TrcPidController yPidCtrl;
@@ -75,11 +69,8 @@ public class Robot
     //
     // Define our subsystems for Auto and TeleOp modes.
     //
-    public Elevator leftElevator;
-    public Elevator rightElevator;
-    public TrcPneumatic lowerGrabber;
-    public TrcPneumatic upperGrabber;
-    public TrcPneumatic pusher;
+    public Elevator elevator;
+//    public Arm arm;
     public TrcRGBLight rgbLight;
 
     //
@@ -259,8 +250,7 @@ public class Robot
         //
         // Elevator subsystem.
         //
-        leftElevator = new Elevator();
-        rightElevator = new Elevator();
+        elevator = new Elevator();
         //
         // RGB LED light
         //

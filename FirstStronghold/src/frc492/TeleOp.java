@@ -1,13 +1,12 @@
 package frc492;
 
-import edu.wpi.first.wpilibj.Timer;
 import frclibj.TrcAnalogInput;
 import frclibj.TrcAnalogInput.Zone;
+import frclibj.TrcBooleanState;
 import frclibj.TrcDashboard;
 import frclibj.TrcJoystick;
 import frclibj.TrcRGBLight;
 import frclibj.TrcRobot;
-import frclibj.TrcBooleanState;
 
 public class TeleOp implements TrcRobot.RobotMode,
                                TrcJoystick.ButtonHandler,
@@ -48,18 +47,10 @@ public class TeleOp implements TrcRobot.RobotMode,
     private boolean slowElevatorOverride;
     private boolean headingLockEnabled;
     private int colorIndex;
-    private TrcRGBLight.ColorLightState savedLightState;
     private boolean grabberToggleEnabled = true;
     private boolean pusherToggleEnabled = true;
     private boolean sonarAlignmentOn = false;
     private double presetElevatorHeight = 3.0;
-
-    private double prevRobotTilt;
-    private TrcBooleanState robotToppling;
-    private TrcRGBLight.ColorLightState toppleLightState;
-    private double topplingResetTime;
-    private double driveResetTime;
-    private double topplingTilt;
 
     public TeleOp(Robot robot)
     {
@@ -85,19 +76,12 @@ public class TeleOp implements TrcRobot.RobotMode,
         slowElevatorOverride = false;
         headingLockEnabled = false;
         colorIndex = 0;
-        savedLightState = null;
 
         grabberToggleEnabled = TrcDashboard.getBoolean(
                 grabberToggleEnabledKey, grabberToggleEnabled);
         pusherToggleEnabled = TrcDashboard.getBoolean(
                 pusherToggleEnabledKey, pusherToggleEnabled);
 
-        prevRobotTilt = robot.robotTilt;
-        robotToppling = new TrcBooleanState("robotToppling", false);
-        toppleLightState = null;
-        topplingResetTime = 0.0;
-        driveResetTime = 0.0;
-        topplingTilt = 0.0;
         //
         // Use coast mode to prevent the tote/bin stack from toppling over.
         //
@@ -111,8 +95,7 @@ public class TeleOp implements TrcRobot.RobotMode,
     {
         robot.sonarPidCtrl.setOutputRange(
                 -RobotInfo.SONAR_RANGE_LIMIT, RobotInfo.SONAR_RANGE_LIMIT);
-        robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
-        robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+        robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
         robot.ultrasonic.setEnabled(true);
         if (debugVision)
         {
@@ -145,6 +128,7 @@ public class TeleOp implements TrcRobot.RobotMode,
         // Robot toppling detection.
         //
         double elevatorPower = operatorStick.getYWithDeadband(true);
+        /*
         if (robotToppling.getState())
         {
             topplingTilt = robot.robotTilt;
@@ -196,6 +180,7 @@ public class TeleOp implements TrcRobot.RobotMode,
         }
         prevRobotTilt = robot.robotTilt;
         TrcDashboard.putNumber("Toppling Tilt", topplingTilt);
+        */
 
         //
         // DriveBase operation.
@@ -224,8 +209,7 @@ public class TeleOp implements TrcRobot.RobotMode,
         {
             elevatorPower /= 2.0;
         }
-        robot.leftElevator.setPower(elevatorPower);
-        robot.rightElevator.setPower(elevatorPower);
+        robot.elevator.setPower(elevatorPower);
         /*
         if (!robotToppling.getState())
         {
@@ -235,8 +219,7 @@ public class TeleOp implements TrcRobot.RobotMode,
 
         if (debugElevator)
         {
-            robot.leftElevator.displayDebugInfo(1);
-            robot.rightElevator.displayDebugInfo(1);
+            robot.elevator.displayDebugInfo(1);
         }
         robot.updateDashboard();
     }   //periodic
@@ -365,8 +348,7 @@ public class TeleOp implements TrcRobot.RobotMode,
             switch (buttonMask)
             {
             case TrcJoystick.LOGITECH_TRIGGER:
-                robot.leftElevator.setElevatorOverride(pressed);
-                robot.rightElevator.setElevatorOverride(pressed);
+                robot.elevator.setElevatorOverride(pressed);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON2:
@@ -374,112 +356,36 @@ public class TeleOp implements TrcRobot.RobotMode,
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON3:
-                if (robot.pusher != null)
-                {
-                    robot.pusher.setState(pressed, pusherToggleEnabled);
-                }
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON4:
-                if (robot.upperGrabber != null)
-                {
-                    robot.upperGrabber.setState(pressed, grabberToggleEnabled);
-                    if (pressed && grabberToggleEnabled &&
-                        robot.lowerGrabber != null &&
-                        robot.rgbLight != null)
-                    {
-                        if (robot.upperGrabber.isExtended())
-                        {
-                            if (!robot.lowerGrabber.isExtended())
-                            {
-                                savedLightState =
-                                        robot.rgbLight.getColorLightState();
-                            }
-                            robot.rgbLight.setColor(
-                                    TrcRGBLight.RGBColor.RGB_GREEN);
-                        }
-                        else
-                        {
-                            if (robot.lowerGrabber.isExtended())
-                            {
-                                robot.rgbLight.setColor(
-                                        TrcRGBLight.RGBColor.RGB_RED);
-                            }
-                            else
-                            {
-                                robot.rgbLight.setColorLightState(
-                                        savedLightState);
-                            }
-                        }
-                    }
-                }
-                //System.out.printf("Firing...\n");
-                //robot.leftHook.setState(pressed, true);
-                //robot.rightHook.setState(pressed, true);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON5:
-                if (robot.lowerGrabber != null)
-                {
-                    robot.lowerGrabber.setState(pressed, grabberToggleEnabled);
-                    if (pressed && grabberToggleEnabled &&
-                        robot.upperGrabber != null &&
-                        robot.rgbLight != null)
-                    {
-                        if (robot.lowerGrabber.isExtended())
-                        {
-                            if (!robot.upperGrabber.isExtended())
-                            {
-                                savedLightState =
-                                        robot.rgbLight.getColorLightState();
-                            }
-                            robot.rgbLight.setColor(
-                                    TrcRGBLight.RGBColor.RGB_RED);
-                        }
-                        else
-                        {
-                            if (robot.upperGrabber.isExtended())
-                            {
-                                robot.rgbLight.setColor(
-                                        TrcRGBLight.RGBColor.RGB_GREEN);
-                            }
-                            else
-                            {
-                                robot.rgbLight.setColorLightState(
-                                        savedLightState);
-                            }
-                        }
-                    }
-                }
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON6:
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON7:
-                robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
-                robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON8:
-                robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
-                robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON9:
                 if (pressed)
                 {
-                    robot.leftElevator.setHeight(presetElevatorHeight);
-                    robot.rightElevator.setHeight(presetElevatorHeight);
+                    robot.elevator.setHeight(presetElevatorHeight);
                 }
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON10:
                 if (pressed)
                 {
-                    robot.leftElevator.setDeltaHeight(
-                            -RobotInfo.ELEVATOR_HEIGHT_INC);
-                    robot.rightElevator.setDeltaHeight(
+                    robot.elevator.setDeltaHeight(
                             -RobotInfo.ELEVATOR_HEIGHT_INC);
                 }
                 break;
@@ -487,10 +393,8 @@ public class TeleOp implements TrcRobot.RobotMode,
             case TrcJoystick.LOGITECH_BUTTON11:
                 if (pressed)
                 {
-                    robot.leftElevator.setDeltaHeight(
+                    robot.elevator.setDeltaHeight(
                             RobotInfo.ELEVATOR_HEIGHT_INC);
-                    robot.rightElevator.setDeltaHeight(
-                            -RobotInfo.ELEVATOR_HEIGHT_INC);
                 }
                 break;
             }
