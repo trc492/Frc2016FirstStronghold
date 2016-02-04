@@ -60,6 +60,11 @@ public class Robot
     public CANTalon leftRearMotor;
     public CANTalon rightFrontMotor;
     public CANTalon rightRearMotor;
+    //
+    // Robot Arms
+    //
+    public CANTalon leftArmMotor;
+    public CanTalon rightArmMotor;
     public TrcDriveBase driveBase;
     public TrcPidController xPidCtrl;
     public TrcPidController yPidCtrl;
