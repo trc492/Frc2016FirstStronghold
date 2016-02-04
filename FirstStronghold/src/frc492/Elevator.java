@@ -1,3 +1,6 @@
+/*
+ * Lift and lower arms
+ */
 package frc492;
 
 import edu.wpi.first.wpilibj.CANTalon;
@@ -17,6 +20,9 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
     private double lastHeight = 0.0;
     private boolean stopped = true;
 
+    /*
+     * Constructor
+     */
     public Elevator()
     {
         elevatorMotor = new CANTalon(RobotInfo.CANID_ELEVATOR);

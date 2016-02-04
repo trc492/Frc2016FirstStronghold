@@ -70,7 +70,8 @@ public class Robot
     //
     // Define our subsystems for Auto and TeleOp modes.
     //
-    public Elevator elevator;
+    public Elevator leftElevator;
+    public Elevator rightElevator;
     public TrcPneumatic lowerGrabber;
     public TrcPneumatic upperGrabber;
     public TrcPneumatic pusher;
@@ -253,7 +254,8 @@ public class Robot
         //
         // Elevator subsystem.
         //
-        elevator = new Elevator();
+        leftElevator = new Elevator();
+        rightElevator = new Elevator();
         //
         // RGB LED light
         //

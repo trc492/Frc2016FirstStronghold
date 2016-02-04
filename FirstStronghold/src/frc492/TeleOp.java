@@ -111,7 +111,8 @@ public class TeleOp implements TrcRobot.RobotMode,
     {
         robot.sonarPidCtrl.setOutputRange(
                 -RobotInfo.SONAR_RANGE_LIMIT, RobotInfo.SONAR_RANGE_LIMIT);
-        robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+        robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+        robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
         robot.ultrasonic.setEnabled(true);
         if (debugVision)
         {
@@ -191,7 +192,7 @@ public class TeleOp implements TrcRobot.RobotMode,
             //
             // Raise elevator 3 inches
             //
-//            robot.elevator.setHeight(robot.elevator.getHeight() + 3.0);
+//            robot.leftElevator.setHeight(robot.leftElevator.getHeight() + 3.0);
         }
         prevRobotTilt = robot.robotTilt;
         TrcDashboard.putNumber("Toppling Tilt", topplingTilt);
@@ -223,17 +224,19 @@ public class TeleOp implements TrcRobot.RobotMode,
         {
             elevatorPower /= 2.0;
         }
-        robot.elevator.setPower(elevatorPower);
+        robot.leftElevator.setPower(elevatorPower);
+        robot.rightElevator.setPower(elevatorPower);
         /*
         if (!robotToppling.getState())
         {
-            robot.elevator.setPower(elevatorPower);
+            robot.leftElevator.setPower(elevatorPower);
         }
         */
 
         if (debugElevator)
         {
-            robot.elevator.displayDebugInfo(1);
+            robot.leftElevator.displayDebugInfo(1);
+            robot.rightElevator.displayDebugInfo(1);
         }
         robot.updateDashboard();
     }   //periodic
@@ -362,7 +365,8 @@ public class TeleOp implements TrcRobot.RobotMode,
             switch (buttonMask)
             {
             case TrcJoystick.LOGITECH_TRIGGER:
-                robot.elevator.setElevatorOverride(pressed);
+                robot.leftElevator.setElevatorOverride(pressed);
+                robot.rightElevator.setElevatorOverride(pressed);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON2:
@@ -453,24 +457,29 @@ public class TeleOp implements TrcRobot.RobotMode,
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON7:
-                robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON8:
-                robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.leftElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                robot.rightElevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON9:
                 if (pressed)
                 {
-                    robot.elevator.setHeight(presetElevatorHeight);
+                    robot.leftElevator.setHeight(presetElevatorHeight);
+                    robot.rightElevator.setHeight(presetElevatorHeight);
                 }
                 break;
 
             case TrcJoystick.LOGITECH_BUTTON10:
                 if (pressed)
                 {
-                    robot.elevator.setDeltaHeight(
+                    robot.leftElevator.setDeltaHeight(
+                            -RobotInfo.ELEVATOR_HEIGHT_INC);
+                    robot.rightElevator.setDeltaHeight(
                             -RobotInfo.ELEVATOR_HEIGHT_INC);
                 }
                 break;
@@ -478,8 +487,10 @@ public class TeleOp implements TrcRobot.RobotMode,
             case TrcJoystick.LOGITECH_BUTTON11:
                 if (pressed)
                 {
-                    robot.elevator.setDeltaHeight(
+                    robot.leftElevator.setDeltaHeight(
                             RobotInfo.ELEVATOR_HEIGHT_INC);
+                    robot.rightElevator.setDeltaHeight(
+                            -RobotInfo.ELEVATOR_HEIGHT_INC);
                 }
                 break;
             }
