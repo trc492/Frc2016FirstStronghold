@@ -52,6 +52,7 @@ public abstract class FrcRobotBase extends RobotBase
     private static final boolean debugEnabled = false;
     private static final boolean dashboardEnabled = true;
     private TrcDbgTrace dbgTrace = null;
+    private static TrcDbgTrace robotTracer = null;
 
     /**
      * This method is called to initialize the robot.
@@ -94,6 +95,20 @@ public abstract class FrcRobotBase extends RobotBase
         return instance;
     }   //getInstance
     
+    public static TrcDbgTrace getRobotTracer()
+    {
+        if (robotTracer == null)
+        {
+            robotTracer = new TrcDbgTrace(
+                    moduleName,
+                    false,
+                    TrcDbgTrace.TraceLevel.API,
+                    TrcDbgTrace.MsgLevel.INFO);
+        }
+
+        return robotTracer;
+    }   //getRobotTracer
+
     public double getModeElapsedTime()
     {
         return modeElapsedTime;

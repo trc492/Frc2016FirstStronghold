@@ -22,6 +22,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public void setXInverted(boolean inverted)
     {
+        //
+        // X-axis is not supported.
+        //
     }   //setXInverted
 
     /**
@@ -32,6 +35,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public void setYInverted(boolean inverted)
     {
+        //
+        // Y-axis is not supported.
+        //
     }   //setYInverted
 
     /**
@@ -52,6 +58,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public SensorData getXRotationRate()
     {
+        //
+        // X-axis is not supported.
+        //
         return null;
     }   //getXRotationRate
 
@@ -62,6 +71,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public SensorData getYRotationRate()
     {
+        //
+        // Y-axis is not supported.
+        //
         return null;
     }   //getYRotationRate
 
@@ -85,6 +97,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public SensorData getXHeading()
     {
+        //
+        // X-axis is not supported.
+        //
         return null;
     }   //getXHeading
 
@@ -98,6 +113,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public SensorData getYHeading()
     {
+        //
+        // Y-axis is not supported.
+        //
         return null;
     }   //getYHeading
 
@@ -119,6 +137,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public void resetXIntegrator()
     {
+        //
+        // X-axis is not supported.
+        //
     }   //resetXIntegrator
 
     /**
@@ -126,6 +147,9 @@ public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
      */
     public void resetYIntegrator()
     {
+        //
+        // Y-axis is not supported.
+        //
     }   //resetYIntegrator
 
     /**
