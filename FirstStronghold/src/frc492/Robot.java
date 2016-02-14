@@ -3,22 +3,23 @@ package frc492;
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.*;
 
-import edu.wpi.first.wpilibj.AnalogGyro;
 import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.SpeedController;
 import edu.wpi.first.wpilibj.Timer;
-import frclibj.TrcAnalogInput;
-import frclibj.TrcDashboard;
-import frclibj.TrcDbgTrace;
-import frclibj.TrcDriveBase;
-import frclibj.TrcKalmanFilter;
-import frclibj.TrcMotorPosition;
-import frclibj.TrcPidController;
-import frclibj.TrcPidDrive;
-import frclibj.TrcRGBLight;
-import frclibj.TrcRobot;
+import frclib.FrcADXRS450Gyro;
+import frclib.FrcCANTalon;
+import frclib.FrcRobotBase;
+import frclib.FrcRGBLight;
+import hallib.HalDashboard;
+import hallib.HalUtil;
+import trclib.TrcDbgTrace;
+import trclib.TrcDriveBase;
+import trclib.TrcKalmanFilter;
+import trclib.TrcPidController;
+import trclib.TrcPidDrive;
+import trclib.TrcRobot.RobotMode;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -27,19 +28,19 @@ import frclibj.TrcRobot;
  * creating this project, you must also update the manifest file in the
  * resource directory.
  */
-public class Robot
-        extends TrcRobot
-        implements TrcMotorPosition, TrcPidController.PidInput
+public class Robot extends FrcRobotBase implements TrcPidController.PidInput
 {
     private static final String programName = "FirstStronghold";
     private static final String moduleName = "Robot";
+    private TrcDbgTrace dbgTrace = null;
+
+    private HalDashboard dashboard = HalDashboard.getInstance();
     private static final boolean visionTargetEnabled = false;
     private static final boolean debugDriveBase = false;
     private static final boolean debugPidDrive = false;
-    private static final boolean debugPidElevator = false;
+    private static final boolean debugPidElevator = true;
     private static final boolean debugPidSonar = false;
     private static boolean usbCameraEnabled = false;
-    private TrcDbgTrace dbgTrace = null;
 
 //    public static boolean competitionRobot = true;
 
@@ -50,28 +51,28 @@ public class Robot
     private TrcKalmanFilter accelXFilter;
     private TrcKalmanFilter accelYFilter;
     private TrcKalmanFilter accelZFilter;
-    public double robotTilt;
+//    private AnalogGyro gyro;
+    private FrcADXRS450Gyro gyro;
     //
     // DriveBase subsystem.
     //
-    public AnalogGyro gyro;
-    public CANTalon leftFrontMotor;
-    public CANTalon leftRearMotor;
-    public CANTalon rightFrontMotor;
-    public CANTalon rightRearMotor;
+    public FrcCANTalon leftFrontMotor;
+    public FrcCANTalon leftRearMotor;
+    public FrcCANTalon rightFrontMotor;
+    public FrcCANTalon rightRearMotor;
     public TrcDriveBase driveBase;
-    public TrcPidController xPidCtrl;
-    public TrcPidController yPidCtrl;
-    public TrcPidController turnPidCtrl;
+    public TrcPidController encoderYPidCtrl;
+    public TrcPidController gyroTurnPidCtrl;
     public TrcPidDrive pidDrive;
-    public TrcPidController sonarPidCtrl;
+    public TrcPidController sonarYPidCtrl;
     public TrcPidDrive sonarPidDrive;
     //
     // Define our subsystems for Auto and TeleOp modes.
     //
     public Elevator elevator;
-//    public Arm arm;
-    public TrcRGBLight rgbLight;
+    public Arm arm;
+    public FrcCANTalon pickup;
+    public FrcRGBLight rgbLight;
 
     //
     // Vision target subsystem.
@@ -83,7 +84,7 @@ public class Robot
     private CameraServer cameraServer = null;
     private int usbCamSession = -1;
     private Image usbCamImage = null;
-    private double nextCaptureTime = Timer.getFPGATimestamp();
+    private double nextCaptureTime = HalUtil.getCurrentTime();
     private static final String targetLeftKey = "Target Left";
     private static final String targetRightKey = "Target Right";
     private static final String targetTopKey = "Target Top";
@@ -106,11 +107,13 @@ public class Robot
     //
     // Ultrasonic subsystem (has a dependency on teleOpMode).
     //
+    /*
     public TrcAnalogInput ultrasonic;
     private TrcKalmanFilter sonarFilter;
     public double sonarDistance;
-    private static final String dispenserDistanceKey = "Dispenser Distance";
-    public double dispenserDistance = 26.0;
+    private static final String wallDistanceKey = "Wall Distance";
+    public double wallDistance = 26.0;
+    */
 
     /**
      * Constructor.
@@ -130,24 +133,28 @@ public class Robot
      * used for any initialization code.
      */
     @Override
-    public void robotInit()
+    public void initRobot()
     {
-        final String funcName = "robotInit";
+        final String funcName = "initRobot";
+
         //
         // Sensors.
         //
         accelerometer = new BuiltInAccelerometer();
-        accelXFilter = new TrcKalmanFilter();
-        accelYFilter = new TrcKalmanFilter();
-        accelZFilter = new TrcKalmanFilter();
+        accelXFilter = new TrcKalmanFilter("accelX");
+        accelYFilter = new TrcKalmanFilter("accelY");
+        accelZFilter = new TrcKalmanFilter("accelZ");
+        gyro = new FrcADXRS450Gyro();
+//        gyro = new AnalogGyro(RobotInfo.AIN_GYRO);
+
         //
         // DriveBase subsystem.
         //
-        gyro = new AnalogGyro(RobotInfo.AIN_GYRO);
-        leftFrontMotor = new CANTalon(RobotInfo.CANID_LEFTFRONTMOTOR);
-        leftRearMotor = new CANTalon(RobotInfo.CANID_LEFTREARMOTOR);
-        rightFrontMotor = new CANTalon(RobotInfo.CANID_RIGHTFRONTMOTOR);
-        rightRearMotor = new CANTalon(RobotInfo.CANID_RIGHTREARMOTOR);
+        leftFrontMotor = new FrcCANTalon(RobotInfo.CANID_LEFTFRONTMOTOR);
+        leftRearMotor = new FrcCANTalon(RobotInfo.CANID_LEFTREARMOTOR);
+        rightFrontMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTFRONTMOTOR);
+        rightRearMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTREARMOTOR);
+
         //
         // Initialize each drive motor controller.
         //
@@ -155,10 +162,7 @@ public class Robot
         leftRearMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
         rightFrontMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
         rightRearMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
-        leftFrontMotor.reverseSensor(RobotInfo.LEFTFRONTMOTOR_INVERTED);
-        leftRearMotor.reverseSensor(RobotInfo.LEFTREARMOTOR_INVERTED);
-        rightFrontMotor.reverseSensor(RobotInfo.RIGHTFRONTMOTOR_INVERTED);
-        rightRearMotor.reverseSensor(RobotInfo.RIGHTREARMOTOR_INVERTED);
+
         //
         // Reset encoders.
         //
@@ -166,6 +170,7 @@ public class Robot
         leftRearMotor.setPosition(0.0);
         rightFrontMotor.setPosition(0.0);
         rightRearMotor.setPosition(0.0);
+
         //
         // Initialize DriveBase subsystem.
         //
@@ -174,91 +179,74 @@ public class Robot
                 leftRearMotor,
                 rightFrontMotor,
                 rightRearMotor,
-                this,
                 gyro);
-        driveBase.setInvertedMotor(
-                TrcDriveBase.MotorType.kFrontLeft,
-                RobotInfo.LEFTFRONTMOTOR_INVERTED);
-        driveBase.setInvertedMotor(
-                TrcDriveBase.MotorType.kRearLeft,
-                RobotInfo.LEFTREARMOTOR_INVERTED);
-        driveBase.setInvertedMotor(
-                TrcDriveBase.MotorType.kFrontRight,
-                RobotInfo.RIGHTFRONTMOTOR_INVERTED);
-        driveBase.setInvertedMotor(
-                TrcDriveBase.MotorType.kRearRight,
-                RobotInfo.RIGHTREARMOTOR_INVERTED);
+        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kFrontLeft, false);
+        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kRearLeft, false);
+        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kFrontRight, false);
+        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kRearRight, false);
+
         //
         // Create PID controllers for DriveBase PID drive.
         //
-        xPidCtrl = new TrcPidController(
-                "xPidCtrl",
-                RobotInfo.X_KP,
-                RobotInfo.X_KI,
-                RobotInfo.X_KD,
-                RobotInfo.X_KF,
-                RobotInfo.X_TOLERANCE,
-                RobotInfo.X_SETTLING,
-                this,
-                0);
-        yPidCtrl = new TrcPidController(
-                "yPidCtrl",
-                RobotInfo.Y_KP,
-                RobotInfo.Y_KI,
-                RobotInfo.Y_KD,
-                RobotInfo.Y_KF,
-                RobotInfo.Y_TOLERANCE,
-                RobotInfo.Y_SETTLING,
-                this,
-                0);
-        turnPidCtrl = new TrcPidController(
-                "turnPidCtrl",
-                RobotInfo.TURN_KP,
-                RobotInfo.TURN_KI,
-                RobotInfo.TURN_KD,
-                RobotInfo.TURN_KF,
-                RobotInfo.TURN_TOLERANCE,
-                RobotInfo.TURN_SETTLING,
-                this,
-                0);
+        encoderYPidCtrl = new TrcPidController(
+                "encoderYPidCtrl",
+                RobotInfo.ENCODER_Y_KP,
+                RobotInfo.ENCODER_Y_KI,
+                RobotInfo.ENCODER_Y_KD,
+                RobotInfo.ENCODER_Y_KF,
+                RobotInfo.ENCODER_Y_TOLERANCE,
+                RobotInfo.ENCODER_Y_SETTLING,
+                this);
+        gyroTurnPidCtrl = new TrcPidController(
+                "gyroTurnPidCtrl",
+                RobotInfo.GYRO_TURN_KP,
+                RobotInfo.GYRO_TURN_KI,
+                RobotInfo.GYRO_TURN_KD,
+                RobotInfo.GYRO_TURN_KF,
+                RobotInfo.GYRO_TURN_TOLERANCE,
+                RobotInfo.GYRO_TURN_SETTLING,
+                this);
         pidDrive = new TrcPidDrive(
-                "pidDrive",
-                driveBase,
-                xPidCtrl,
-                yPidCtrl,
-                turnPidCtrl);
+                "pidDrive", driveBase, null, encoderYPidCtrl, gyroTurnPidCtrl);
 
-        sonarPidCtrl = new TrcPidController(
-                "sonarPidCtrl",
-                RobotInfo.SONAR_KP,
-                RobotInfo.SONAR_KI,
-                RobotInfo.SONAR_KD,
-                RobotInfo.SONAR_KF,
-                RobotInfo.SONAR_TOLERANCE,
-                RobotInfo.SONAR_SETTLING,
-                this,
-                (TrcPidController.PIDCTRLO_ABS_SETPT |
-                 TrcPidController.PIDCTRLO_INVERTED));
-        sonarPidDrive =
-                new TrcPidDrive(
-                        "sonarPidDrive",
-                        driveBase,
-                        xPidCtrl,
-                        sonarPidCtrl,
-                        turnPidCtrl);
+        sonarYPidCtrl = new TrcPidController(
+                "sonarYPidCtrl",
+                RobotInfo.SONAR_Y_KP,
+                RobotInfo.SONAR_Y_KI,
+                RobotInfo.SONAR_Y_KD,
+                RobotInfo.SONAR_Y_KF,
+                RobotInfo.SONAR_Y_TOLERANCE,
+                RobotInfo.SONAR_Y_SETTLING,
+                this);
+        sonarYPidCtrl.setAbsoluteSetPoint(true);
+        sonarYPidCtrl.setInverted(true);;
+        sonarPidDrive = new TrcPidDrive(
+                "sonarPidDrive", driveBase,
+                null, sonarYPidCtrl, gyroTurnPidCtrl);
 
         //
         // Elevator subsystem.
         //
         elevator = new Elevator();
+
+        //
+        // Arm subsystem.
+        //
+        arm = new Arm();
+        
+        //
+        // Pickup subsystem
+        //
+        pickup = new FrcCANTalon(RobotInfo.CANID_PICKUP);
+        
         //
         // RGB LED light
         //
         if (RobotInfo.ENABLE_LEDS)
         {
-            rgbLight = new TrcRGBLight(
+            rgbLight = new FrcRGBLight(
                     "rgbLight",
-                    RobotInfo.CANID_PCM,
+                    RobotInfo.CANID_PCM1,
                     RobotInfo.SOL_LED_RED,
                     RobotInfo.SOL_LED_GREEN,
                     RobotInfo.SOL_LED_BLUE);
@@ -267,6 +255,7 @@ public class Robot
         {
             rgbLight = null;
         }
+        
         //
         // Vision subsystem.
         //
@@ -278,6 +267,7 @@ public class Robot
         {
             visionTarget = null;
         }
+        
         //
         // Camera subsystem for streaming.
         //
@@ -311,49 +301,46 @@ public class Robot
         testMode = new Test();
         setupRobotModes(teleOpMode, autoMode, testMode, null);
 
+        /*
         ultrasonic =
                 new TrcAnalogInput(
                         "frontSonar",
                         RobotInfo.AIN_ULTRASONIC,
                         RobotInfo.ULTRASONIC_INCHESPERVOLT,
-                        dispenserDistance - 1.0,
-                        dispenserDistance + 1.0,
+                        wallDistance - 1.0,
+                        wallDistance + 1.0,
                         0,
                         (TrcAnalogInput.AnalogEventHandler)teleOpMode);
         sonarFilter = new TrcKalmanFilter();
 
         dispenserDistance =
                 TrcDashboard.getNumber(dispenserDistanceKey, dispenserDistance);
-    }   //robotInit
+                */
+    }   //initRobot
 
     public void updateDashboard()
     {
         //
         // Sensor info.
         //
+        /*
         sonarDistance = sonarFilter.filter(ultrasonic.getData());
         TrcDashboard.putNumber("Sonar Distance", sonarDistance);
-        double xAccel = accelXFilter.filter(accelerometer.getX());
-        double yAccel = accelYFilter.filter(accelerometer.getY());
-        double zAccel = accelZFilter.filter(accelerometer.getZ());
-        TrcDashboard.putNumber("Accel-X", xAccel);
-        TrcDashboard.putNumber("Accel-Y", yAccel);
-        TrcDashboard.putNumber("Accel-Z", zAccel);
-        robotTilt = zAccel;
-        if (yAccel < 0.0)
-        {
-            robotTilt = -robotTilt;
-        }
-        robotTilt = 180.0*Math.asin(robotTilt)/Math.PI;
-        TrcDashboard.putNumber("Tilt", robotTilt);
+        */
+        double xAccel = accelXFilter.filterData(accelerometer.getX());
+        double yAccel = accelYFilter.filterData(accelerometer.getY());
+        double zAccel = accelZFilter.filterData(accelerometer.getZ());
+        HalDashboard.putNumber("Accel-X", xAccel);
+        HalDashboard.putNumber("Accel-Y", yAccel);
+        HalDashboard.putNumber("Accel-Z", zAccel);
         //
         // Elevator info.
         //
-        TrcDashboard.putNumber(
+        HalDashboard.putNumber(
                 "Elevator Height", elevator.getHeight());
-        TrcDashboard.putBoolean(
+        HalDashboard.putBoolean(
                 "LowerLimitSW", !elevator.isLowerLimitSwitchActive());
-        TrcDashboard.putBoolean(
+        HalDashboard.putBoolean(
                 "UpperLimitSW", !elevator.isUpperLimitSwitchActive());
         //
         // USB camera streaming.
@@ -366,13 +353,13 @@ public class Robot
             nextCaptureTime = Timer.getFPGATimestamp() + 0.1;
             NIVision.IMAQdxGrab(usbCamSession, usbCamImage, 1);
             targetLeft = (int)
-                    TrcDashboard.getNumber(targetLeftKey, targetLeft);
+                    HalDashboard.getNumber(targetLeftKey, targetLeft);
             targetRight = (int)
-                    TrcDashboard.getNumber(targetRightKey, targetRight);
+                    HalDashboard.getNumber(targetRightKey, targetRight);
             targetTop = (int)
-                    TrcDashboard.getNumber(targetTopKey, targetTop);
+                    HalDashboard.getNumber(targetTopKey, targetTop);
             targetBottom = (int)
-                    TrcDashboard.getNumber(targetBottomKey, targetBottom);
+                    HalDashboard.getNumber(targetBottomKey, targetBottom);
             targetRect.left = targetLeft;
             targetRect.top = targetTop;
             targetRect.width = targetRight - targetLeft;
@@ -392,37 +379,33 @@ public class Robot
             //
             // DriveBase debug info.
             //
-            TrcDashboard.textPrintf(
+            dashboard.displayPrintf(
                     1, "LFEnc=%8.0f, RFEnc=%8.0f",
                     leftFrontMotor.getPosition(),
                     rightFrontMotor.getPosition());
-            TrcDashboard.textPrintf(
+            dashboard.displayPrintf(
                     2, "LREnc=%8.0f, RREnc=%8.0f",
                     leftRearMotor.getPosition(),
                     rightRearMotor.getPosition());
-            TrcDashboard.textPrintf(
-                    3, "XPos=%6.1f, YPos=%6.1f, Heading=%6.1f",
-                    driveBase.getXPosition()*RobotInfo.XDRIVE_INCHES_PER_CLICK,
-                    driveBase.getYPosition()*RobotInfo.YDRIVE_INCHES_PER_CLICK,
+            dashboard.displayPrintf(
+                    3, "YPos=%6.1f, Heading=%6.1f",
+                    driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE,
                     driveBase.getHeading());
-            TrcDashboard.textPrintf(
-                    4, "Ultrasonic=%5.1f", sonarDistance);
         }
         else if (debugPidDrive)
         {
-            xPidCtrl.displayPidInfo(1);
-            yPidCtrl.displayPidInfo(3);
-            turnPidCtrl.displayPidInfo(5);
+            encoderYPidCtrl.displayPidInfo(3);
+            gyroTurnPidCtrl.displayPidInfo(5);
         }
         else if (debugPidElevator)
         {
             //
             // Elevator debug info.
             //
-            TrcDashboard.textPrintf(
+            dashboard.displayPrintf(
                     1, "ElevatorHeight=%5.1f",
                     elevator.getHeight());
-            TrcDashboard.textPrintf(
+            dashboard.displayPrintf(
                     2, "LowerLimit=%s, UpperLimit=%s",
                     Boolean.toString(elevator.isLowerLimitSwitchActive()),
                     Boolean.toString(elevator.isUpperLimitSwitchActive()));
@@ -430,9 +413,8 @@ public class Robot
         }
         else if (debugPidSonar)
         {
-            xPidCtrl.displayPidInfo(1);
-            sonarPidCtrl.displayPidInfo(3);
-            turnPidCtrl.displayPidInfo(5);
+            sonarYPidCtrl.displayPidInfo(3);
+            gyroTurnPidCtrl.displayPidInfo(5);
         }
     }   //updateDashboard
 
@@ -484,22 +466,20 @@ public class Robot
     {
         double value = 0.0;
 
-        if (pidCtrl == xPidCtrl)
+        if (pidCtrl == encoderYPidCtrl)
         {
-            value = driveBase.getXPosition()*RobotInfo.XDRIVE_INCHES_PER_CLICK;
+            value = driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE;
         }
-        else if (pidCtrl == yPidCtrl)
-        {
-            value = driveBase.getYPosition()*RobotInfo.YDRIVE_INCHES_PER_CLICK;
-        }
-        else if (pidCtrl == turnPidCtrl)
+        else if (pidCtrl == gyroTurnPidCtrl)
         {
             value = gyro.getAngle();
         }
-        else if (pidCtrl == sonarPidCtrl)
+        /*
+        else if (pidCtrl == sonarYPidCtrl)
         {
             value = sonarDistance;
         }
+        */
 
         return value;
     }   //getInput

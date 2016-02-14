@@ -1,13 +1,20 @@
 package frc492;
 
-import frclibj.TrcDashboard;
-import frclibj.TrcEvent;
-import frclibj.TrcRobot;
-import frclibj.TrcStateMachine;
+import hallib.HalDashboard;
+import trclib.TrcEvent;
+import trclib.TrcRobot;
+import trclib.TrcStateMachine;
 
 public class AutoTuneRobot implements TrcRobot.AutoStrategy
 {
+    private enum State
+    {
+        START,
+        DONE
+    }   //enum State
+    
     private static final String moduleName = "AutoTuneRobot";
+    
     private Robot robot;
     private TrcEvent event;
     private TrcStateMachine sm;
@@ -19,31 +26,31 @@ public class AutoTuneRobot implements TrcRobot.AutoStrategy
         this.tuneMode = tuneMode;
         event = new TrcEvent(moduleName + ".event");
         sm = new TrcStateMachine(moduleName + ".sm");
-        sm.start();
+        sm.start(State.START);
     }   //AutoTuneRobot
 
     //
     // Implements TrcRobot.AutoStrategy.
     //
-    public void autoPeriodic()
+    public void autoPeriodic(double elapsedTime)
     {
         boolean ready = sm.isReady();
-        TrcDashboard.textPrintf(1, "%s[%d] = %s",
+        HalDashboard.getInstance().displayPrintf(1, "%s:%s = %s [%.3f]",
                 moduleName,
-                sm.getState(),
-                ready? "Ready": "NotReady");
+                sm.getState().toString(),
+                ready? "Ready": "NotReady",
+                elapsedTime);
 
-        robot.xPidCtrl.displayPidInfo(2);
-        robot.yPidCtrl.displayPidInfo(4);
-//        robot.sonarPidCtrl.displayPidInfo(4);
-        robot.turnPidCtrl.displayPidInfo(6);
+        robot.encoderYPidCtrl.displayPidInfo(2);
+        robot.gyroTurnPidCtrl.displayPidInfo(4);
+//      robot.sonarPidCtrl.displayPidInfo(4);
 
         if (ready)
         {
-            int state = sm.getState();
+            State state = (State)sm.getState();
             switch (state)
             {
-            case TrcStateMachine.STATE_STARTED:
+            case START:
                 switch (tuneMode)
                 {
                 case TUNEMODE_MOVE_X:
@@ -79,9 +86,10 @@ public class AutoTuneRobot implements TrcRobot.AutoStrategy
                     break;
                 }
                 sm.addEvent(event);
-                sm.waitForEvents(state + 1);
+                sm.waitForEvents(State.DONE);
                 break;
 
+            case DONE:
             default:
                 //
                 // We are done.

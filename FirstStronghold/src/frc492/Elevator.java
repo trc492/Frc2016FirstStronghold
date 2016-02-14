@@ -3,18 +3,16 @@
  */
 package frc492;
 
-import edu.wpi.first.wpilibj.CANTalon;
-import edu.wpi.first.wpilibj.SpeedController;
-import frclibj.TrcEvent;
-import frclibj.TrcMotorPosition;
-import frclibj.TrcPidController;
-import frclibj.TrcPidMotor;
+import frclib.FrcCANTalon;
+import trclib.TrcEvent;
+import trclib.TrcPidController;
+import trclib.TrcPidMotor;
 
-public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
+public class Elevator implements TrcPidController.PidInput
 {
     private static final String moduleName = "Elevator";
-    private CANTalon leftMotor;
-    private CANTalon rightMotor;
+    private FrcCANTalon leftMotor;
+    private FrcCANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
     private boolean elevatorOverride = false;
@@ -26,8 +24,14 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
      */
     public Elevator()
     {
-        leftMotor = new CANTalon(RobotInfo.CANID_LEFT_ELEVATOR);
-        rightMotor = new CANTalon(RobotInfo.CANID_RIGHT_ELEVATOR);
+        leftMotor = new FrcCANTalon(RobotInfo.CANID_LEFT_ELEVATOR);
+        rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ELEVATOR);
+        leftMotor.setInverted(true);
+        rightMotor.setInverted(false);
+        leftMotor.reverseSensor(true);
+        rightMotor.reverseSensor(false);
+        leftMotor.enableBrakeMode(true);
+        rightMotor.enableBrakeMode(true);
         pidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.ELEVATOR_KP,
@@ -36,17 +40,18 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
                 RobotInfo.ELEVATOR_KF,
                 RobotInfo.ELEVATOR_TOLERANCE,
                 RobotInfo.ELEVATOR_SETTLING,
-                this,
-                TrcPidController.PIDCTRLO_ABS_SETPT);
+                this);
+        pidCtrl.setAbsoluteSetPoint(true);
         leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
         rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
         pidMotor = new TrcPidMotor(
                 moduleName,
-                leftMotor, rightMotor, RobotInfo.ELEVATOR_SYNCGROUP,
-                pidCtrl, this);
-        pidMotor.setTargetScale(RobotInfo.ELEVATOR_INCHES_PER_CLICK);
+                leftMotor, rightMotor,
+                RobotInfo.ELEVATOR_SYNC_GAIN,
+                pidCtrl);
+        pidMotor.setPositionScale(RobotInfo.ELEVATOR_INCHES_PER_CLICK);
         lastHeight = getHeight();
     }
 
@@ -68,6 +73,17 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
 
     public void setPower(double power)
     {
+        /*
+        leftMotor.set(power);
+        rightMotor.set(power);
+        if (power != 0.0)
+        {
+            System.out.printf("p=%.2f,lEnc=%.0f,rEnc=%.0f\n",
+                power, leftMotor.getPosition(), rightMotor.getPosition());
+        }
+        */
+        pidMotor.setPower(power);
+        /*
         if (elevatorOverride)
         {
             pidMotor.setPower(power);
@@ -93,8 +109,15 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
         {
             stopped = false;
         }
+        */
     }
 
+    public void resetPosition()
+    {
+        leftMotor.resetPosition();
+        rightMotor.resetPosition();
+    }   //resetPosition
+    
     public void setDeltaHeight(double deltaHeight)
     {
         lastHeight += deltaHeight;
@@ -122,8 +145,8 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
 
     public double getHeight()
     {
-        return getMotorPosition(leftMotor)*
-               RobotInfo.ELEVATOR_INCHES_PER_CLICK;
+        return (leftMotor.getPosition() + rightMotor.getPosition())*
+               RobotInfo.ELEVATOR_INCHES_PER_CLICK/2.0;
     }
 
     public boolean isUpperLimitSwitchActive()
@@ -137,44 +160,11 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
         return !leftMotor.isRevLimitSwitchClosed() &&
                !rightMotor.isRevLimitSwitchClosed();
     }
-    //
-    // Implements TrcDriveBase.MotorPosition.
-    //
-    public double getMotorPosition(SpeedController speedController)
-    {
-        return ((CANTalon)speedController).getPosition();
-    }   //getMotorPosition
-
-    public double getMotorSpeed(SpeedController speedController)
-    {
-        return ((CANTalon)speedController).getSpeed()*10.0;
-    }   //getMotorSpeed
-
-    public void resetMotorPosition(SpeedController speedController)
-    {
-        ((CANTalon)speedController).setPosition(0.0);
-    }   //resetMotorPosition
-
-    public void reversePositionSensor(
-            SpeedController speedController,
-            boolean flip)
-    {
-        ((CANTalon)speedController).reverseSensor(flip);
-    }   //reversePositionSensor
-
-    public boolean isForwardLimitSwitchActive(SpeedController speedController)
-    {
-        return !((CANTalon)speedController).isFwdLimitSwitchClosed();
-    }   //isForwardLimitSwitchActive
-
-    public boolean isReverseLimitSwitchActive(SpeedController speedController)
-    {
-        return !((CANTalon)speedController).isRevLimitSwitchClosed();
-    }   //isReverseLimitSwitchActive
 
     //
     // Implements TrcPidController.PidInput.
     //
+
     public double getInput(TrcPidController pidCtrl)
     {
         double value = 0.0;
@@ -187,4 +177,4 @@ public class Elevator implements TrcMotorPosition, TrcPidController.PidInput
         return value;
     }   //getInput
 
-}
+}   //class Elevator

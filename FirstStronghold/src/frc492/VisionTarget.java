@@ -9,12 +9,12 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
 import edu.wpi.first.wpilibj.vision.AxisCamera.Resolution;
-import frclibj.TrcDashboard;
-import frclibj.TrcDbgTrace;
-import frclibj.TrcRobot;
-import frclibj.TrcTaskMgr;
-import frclibj.TrcVision.ParticleReport;
-import frclibj.TrcVision;
+import trclib.TrcDbgTrace;
+import trclib.TrcRobot;
+import trclib.TrcTaskMgr;
+import trclib.TrcVision.ParticleReport;
+import hallib.HalDashboard;
+import trclib.TrcVision;
 
 public class VisionTarget implements TrcTaskMgr.Task
 {
@@ -22,6 +22,7 @@ public class VisionTarget implements TrcTaskMgr.Task
     private static final boolean debugEnabled = false;
     private static final boolean debugVision = false;
     private TrcDbgTrace dbgTrace = null;
+    private HalDashboard dashboard = HalDashboard.getInstance();
 
     public class TargetReport
     {
@@ -283,23 +284,23 @@ public class VisionTarget implements TrcTaskMgr.Task
 
             if (debugVision)
             {
-                TrcDashboard.textPrintf(
+                dashboard.displayPrintf(
                         1, "imageWidth = %d, imageHeight = %d",
                         targetReport.imageWidth,
                         targetReport.imageHeight);
-                TrcDashboard.textPrintf(
+                dashboard.displayPrintf(
                         2, "rectLeft = %f, rectRight = %f",
                         targetReport.boundingRectLeft,
                         targetReport.boundingRectRight);
-                TrcDashboard.textPrintf(
+                dashboard.displayPrintf(
                         3, "rectTop = %f, rectBottom = %f",
                         targetReport.boundingRectTop,
                         targetReport.boundingRectBottom);
-                TrcDashboard.textPrintf(
+                dashboard.displayPrintf(
                         4, "areaScore = %f, aspectScore = %f",
                         targetReport.areaScore,
                         targetReport.aspectScore);
-                TrcDashboard.textPrintf(
+                dashboard.displayPrintf(
                         5, "distance = %f, isTote = %s, deltaX/Y = %4.1f/%4.1f",
                         targetReport.distance,
                         Boolean.toString(targetReport.isTote),
@@ -398,16 +399,17 @@ public class VisionTarget implements TrcTaskMgr.Task
                     "enabled=%s", Boolean.toString(enabled));
         }
 
+        TrcTaskMgr taskMgr = TrcTaskMgr.getInstance();
         if (enabled)
         {
-            TrcTaskMgr.registerTask(
+            taskMgr.registerTask(
                     moduleName,
                     this,
                     TrcTaskMgr.TaskType.POSTPERIODIC_TASK);
         }
         else
         {
-            TrcTaskMgr.unregisterTask(
+            taskMgr.unregisterTask(
                     this,
                     TrcTaskMgr.TaskType.POSTPERIODIC_TASK);
         }
@@ -421,6 +423,7 @@ public class VisionTarget implements TrcTaskMgr.Task
     //
     // Implements TrcTaskMgr.Task
     //
+    
     public void startTask(TrcRobot.RunMode runMode)
     {
     }   //startTask

@@ -1,28 +1,28 @@
 package frc492;
 
 import edu.wpi.first.wpilibj.livewindow.LiveWindow;
-import frclibj.TrcRobot;
+import trclib.TrcRobot;
 
 public class Test implements TrcRobot.RobotMode
 {
     //
     // Implements TrcRobot.RobotMode.
     //
-    public void start()
+    public void startMode()
     {
-    }   //start
+    }   //startMode
 
-    public void stop()
+    public void stopMode()
     {
-    }   //stop
+    }   //stopMode
 
-    public void periodic()
+    public void runPeriodic(double elapsedTime)
     {
         LiveWindow.run();
-    }   //periodic
+    }   //runPeriodic
 
-    public void continuous()
+    public void runContinuous(double elapsedTime)
     {
-    }   //continuous
+    }   //runContinuous
 
 }   //class Test
