@@ -1,4 +1,4 @@
-package trclib;
+package frclib;
 
 import java.util.Comparator;
 import java.util.Vector;
@@ -10,10 +10,13 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
 import hallib.HalDashboard;
+import trclib.TrcDbgTrace;
+import trclib.TrcDbgTrace.MsgLevel;
+import trclib.TrcDbgTrace.TraceLevel;
 
-public class TrcVision implements Runnable
+public class FrcVision implements Runnable
 {
-    private static final String moduleName = "TrcVision";
+    private static final String moduleName = "FrcVision";
     private static final boolean debugEnabled = false;
     private static final boolean visionPerfEnabled = false;
     private TrcDbgTrace dbgTrace = null;
@@ -61,7 +64,7 @@ public class TrcVision implements Runnable
     private boolean oneShotEnabled = false;
     private Vector<ParticleReport> targets = null;
 
-    public TrcVision(
+    public FrcVision(
             AxisCamera camera,
             ImageType imageType,
             ColorMode colorMode,
@@ -97,7 +100,7 @@ public class TrcVision implements Runnable
         monitor = new Object();
         visionThread = new Thread(this, "VisionTask");
         visionThread.start();
-    }   //TrcVision
+    }   //FrcVision
 
     public void setTaskEnabled(boolean enabled)
     {
@@ -433,4 +436,4 @@ public class TrcVision implements Runnable
         }
     }   //processImage
 
-}   //class TrcVision
+}   //class FrcVision

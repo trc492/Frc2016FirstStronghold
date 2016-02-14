@@ -64,4 +64,100 @@ public class HalRobotDrive extends RobotDrive
               (SpeedController)rearRightMotor);
     }
 
+    /**
+     * This method implements tank drive where leftPower controls the left motors
+     * and right power controls the right motors.
+     *
+     * @param leftPower specifies left power value.
+     * @param rightPower specifies right power value.
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     */
+    public void tankDrive(double leftPower, double rightPower, boolean inverted)
+    {
+        if (inverted)
+        {
+            double swap = leftPower;
+            leftPower = -rightPower;
+            rightPower = -swap;
+        }
+
+        tankDrive(leftPower, rightPower);
+    }   //tankDrive
+
+    /**
+     * This method implements arcade drive where drivePower controls how fast
+     * the robot goes in the y-axis and turnPower controls how fast it will
+     * turn.
+     *
+     * @param drivePower specifies the drive power value.
+     * @param turnPower specifies the turn power value.
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     */
+    public void arcadeDrive(double drivePower, double turnPower, boolean inverted)
+    {
+        if (inverted)
+        {
+            drivePower = -drivePower;
+        }
+        arcadeDrive(drivePower, turnPower);
+    }   //arcadeDrive
+
+    /**
+     * This method implements mecanum drive where x controls how fast the robot will
+     * go in the x direction, and y controls how fast the robot will go in the y direction.
+     * Rotation controls how fast the robot rotates and gyroAngle specifies the heading
+     * the robot should maintain.
+     * @param x specifies the x power.
+     * @param y specifies the y power.
+     * @param rotation specifies the rotating power.
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     * @param gyroAngle specifies the gyro angle to maintain.
+     */
+    public void mecanumDrive_Cartesian(double x, double y, double rotation,
+                                       boolean inverted, double gyroAngle)
+    {
+        if (inverted)
+        {
+            x = -x;
+            y = -y;
+        }
+        mecanumDrive_Cartesian(x, y, rotation, gyroAngle);
+    }   //mecanumDrive_Cartesian
+
+    /**
+     * This method implements mecanum drive where x controls how fast the robot will
+     * go in the x direction, and y controls how fast the robot will go in the y direction.
+     * Rotation controls how fast the robot rotates and gyroAngle specifies the heading
+     * the robot should maintain.
+     * @param x specifies the x power.
+     * @param y specifies the y power.
+     * @param rotation specifies the rotating power.
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     */
+    public void mecanumDrive_Cartesian(double x, double y, double rotation, boolean inverted)
+    {
+        mecanumDrive_Cartesian(x, y, rotation, inverted, 0.0);
+    }   //mecanumDrive_Cartesian
+
+    /**
+     * This method implements mecanum drive where magnitude controls how fast the robot
+     * will go in the given direction and how fast it will robote.
+     *
+     * @param magnitude specifies the magnitude combining x and y axes.
+     * @param direction specifies the direction in degrees.
+     * @param rotation specifies the rotation power.
+     * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
+     */
+    public void mecanumDrive_Polar(double magnitude, double direction, double rotation,
+                                   boolean inverted)
+    {
+        if (inverted)
+        {
+            direction += 180.0;
+            direction %= 360.0;
+        }
+
+        mecanumDrive_Polar(magnitude, direction, rotation);
+    }   //mecanumDrive_Polar
+
 }   //HalRobotDrive

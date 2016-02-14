@@ -9,12 +9,12 @@ import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
 import edu.wpi.first.wpilibj.vision.AxisCamera.Resolution;
+import frclib.FrcVision;
+import frclib.FrcVision.ParticleReport;
 import trclib.TrcDbgTrace;
 import trclib.TrcRobot;
 import trclib.TrcTaskMgr;
-import trclib.TrcVision.ParticleReport;
 import hallib.HalDashboard;
-import trclib.TrcVision;
 
 public class VisionTarget implements TrcTaskMgr.Task
 {
@@ -66,7 +66,7 @@ public class VisionTarget implements TrcTaskMgr.Task
     private ParticleFilterCriteria2[] filterCriteria;
     private ParticleFilterOptions2 filterOptions;
     private TargetReport targetReport;
-    private TrcVision visionTask;
+    private FrcVision visionTask;
 
     public VisionTarget()
     {
@@ -100,7 +100,7 @@ public class VisionTarget implements TrcTaskMgr.Task
                 0, 0);
         filterOptions = new ParticleFilterOptions2(0, 0, 1, 1);
         targetReport = new TargetReport();
-        visionTask = new TrcVision(
+        visionTask = new FrcVision(
                 camera,
                 ImageType.IMAGE_RGB,
                 ColorMode.HSV,

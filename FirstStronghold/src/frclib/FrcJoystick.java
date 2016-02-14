@@ -134,7 +134,7 @@ public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
                 instanceName,
                 this,
                 TrcTaskMgr.TaskType.PREPERIODIC_TASK);
-    }   //TrcJoystick
+    }   //FrcJoystick
 
     public FrcJoystick(
             final String instanceName,
@@ -144,7 +144,7 @@ public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
     {
         this(instanceName, port, buttonHandler);
         this.deadbandThreshold = deadbandThreshold;
-    }   //TrcJoystick
+    }   //FrcJoystick
 
     public void setYInverted(boolean inverted)
     {
@@ -517,4 +517,4 @@ public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
         return value;
     }   //adjustValueWithDeadband
 
-}   //class TrcJoystick
+}   //class FrcJoystick

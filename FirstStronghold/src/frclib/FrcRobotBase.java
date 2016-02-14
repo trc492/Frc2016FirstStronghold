@@ -68,8 +68,8 @@ public abstract class FrcRobotBase extends RobotBase
     private RobotMode autoMode = null;
     private RobotMode testMode = null;
     private RobotMode disabledMode = null;
-    private double modeStartTime = 0.0;
-    private double modeElapsedTime = 0.0;
+    private static double modeStartTime = 0.0;
+    private static double modeElapsedTime = 0.0;
 
     /**
      * Constructor.
@@ -109,8 +109,9 @@ public abstract class FrcRobotBase extends RobotBase
         return robotTracer;
     }   //getRobotTracer
 
-    public double getModeElapsedTime()
+    public static double getModeElapsedTime()
     {
+        modeElapsedTime = HalUtil.getCurrentTime() - modeStartTime;
         return modeElapsedTime;
     }   //getModeElapsedTime
     
@@ -412,4 +413,4 @@ public abstract class FrcRobotBase extends RobotBase
         return m_ds.isNewControlData();
     }   //nextPeriodReady
 
-}   //class TrcRobot
+}   //class FrcRobotBase
