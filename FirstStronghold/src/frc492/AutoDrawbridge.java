@@ -2,9 +2,9 @@ package frc492;
 
 import java.sql.Struct;
 
-import frclibj.TrcEvent;
-import frclibj.TrcRobot.AutoStrategy;
-import frclibj.TrcStateMachine;
+import trclib.TrcEvent;
+import trclib.TrcRobot.AutoStrategy;
+import trclib.TrcStateMachine;
 
 public class AutoDrawbridge implements AutoStrategy {
 	
@@ -38,7 +38,7 @@ public class AutoDrawbridge implements AutoStrategy {
 	private static final float MEDIUM_SPEED_MOVING_POWER = 0.5f;
 	private static final int DISTANCE_TO_DRAWBRIDGE = 96;
 	
-	public void autoPeriodic() 
+	public void autoPeriodic(double elapsedTime) 
 	{
 		boolean ready = sm.isReady();
 		
@@ -48,14 +48,14 @@ public class AutoDrawbridge implements AutoStrategy {
 		switch(State)
 		{
 		case MOVING_CLOSE_TO_DRAWBRIDGE_AT_HIGH_SPEED_WHILE_RAISING_ELEVATOR_AND_ROTATING_ARMS:
-			robot.yPidCtrl.setOutputRange(-HIGH_SPEED_MOVING_POWER, HIGH_SPEED_MOVING_POWER);
+			robot.encoderYPidCtrl.setOutputRange(-HIGH_SPEED_MOVING_POWER, HIGH_SPEED_MOVING_POWER);
 			robot.pidDrive.setTarget(DISTANCE_TO_DRAWBRIDGE * (5/6), 0, false, driveEvent, 2);
 			sm.addEvent(driveEvent);
 			// TODO Add elevator and arm raising/turning
 			break;
 			
 		case MOVING_FORWARD_SLOWLY_TO_POSITION_IN_FRONT_OF_DRAWBRIDGE:
-			robot.yPidCtrl.setOutputRange(-MEDIUM_SPEED_MOVING_POWER, MEDIUM_SPEED_MOVING_POWER);
+			robot.encoderYPidCtrl.setOutputRange(-MEDIUM_SPEED_MOVING_POWER, MEDIUM_SPEED_MOVING_POWER);
 			robot.pidDrive.setTarget(DISTANCE_TO_DRAWBRIDGE * (1/6), 0, true, driveEvent, 2);
 			sm.addEvent(driveEvent);
 			break;
