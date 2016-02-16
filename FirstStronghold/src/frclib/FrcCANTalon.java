@@ -28,6 +28,9 @@ import hallib.HalMotorController;
 
 public class FrcCANTalon extends CANTalon implements HalMotorController
 {
+    private boolean fwdLimitSwitchEnabled = false;
+    private boolean revLimitSwitchEnabled = false;
+    
     /**
      * Constructor: Create an instance of the object.
      *
@@ -69,6 +72,16 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
         resetPosition();
     }   //FrcCANTalon
 
+    public void setFwdLimitSwitchEnabled(boolean enabled)
+    {
+        fwdLimitSwitchEnabled = enabled;
+    }   //setFwdLimitSwitchEnabled
+    
+    public void setRevLimitSwitchEnabled(boolean enabled)
+    {
+        revLimitSwitchEnabled = enabled;
+    }   //setRevLimitSwitchEnabled
+    
     //
     // Implements HalMotorController interface.
     //
@@ -99,24 +112,24 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     /**
      * This method returns the state of the forward limit switch.
      *
-     * @return true if forward limit switch is closed, false otherwise.
+     * @return true if forward limit switch is active, false otherwise.
      */
     @Override
-    public boolean isFwdLimitSwitchClosed()
+    public boolean isFwdLimitSwitchActive()
     {
-        return super.isFwdLimitSwitchClosed();
+        return fwdLimitSwitchEnabled && !isFwdLimitSwitchClosed();
     }   //isFwdLimitSwitchClosed
 
     /**
      * This method returns the state of the reverse limit switch.
      *
-     * @return true if reverse limit switch is closed, false otherwise.
+     * @return true if reverse limit switch is active, false otherwise.
      */
     @Override
-    public boolean isRevLimitSwitchClosed()
+    public boolean isRevLimitSwitchActive()
     {
-        return super.isRevLimitSwitchClosed();
-    }   //isRevLimitSwitchClosed
+        return revLimitSwitchEnabled && !isRevLimitSwitchClosed();
+    }   //isRevLimitSwitchActive
 
     /**
      * This method resets the motor position sensor, typically an encoder.
@@ -151,17 +164,21 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     }   //setInverted
 
     /**
-     * This method sets the output of the motor controller. Typically, the output is power.
-     * However, some motor controllers are capable of other operating modes such as position,
-     * speed, voltage, current, etc. When operating in those modes, output specifies the
-     * appropriate value for that operating mode.
+     * This method sets the output power of the motor controller.
      *
-     * @param output specifies the output for the motor controller. If the output is power, it
-     *               is in the range of -1.0 to 1.0.
+     * @param output specifies the output power for the motor controller in the range of
+     * -1.0 to 1.0.
      */
-    public void setOutput(double output)
+    public void setPower(double power)
     {
-        super.set(output);
+        if (power > 0.0 && !isFwdLimitSwitchActive() || power < 0.0 && !isRevLimitSwitchActive())
+        {
+            set(power);
+        }
+        else
+        {
+            set(0.0);
+        }
     }   //setOutput
 
     /**

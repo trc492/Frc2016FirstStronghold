@@ -70,9 +70,11 @@ public class HalRobotDrive extends RobotDrive
      *
      * @param leftPower specifies left power value.
      * @param rightPower specifies right power value.
+     * @param squaredInput specifies true to square the input values, false otherwise.
      * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
      */
-    public void tankDrive(double leftPower, double rightPower, boolean inverted)
+    public void tankDrive(
+            double leftPower, double rightPower, boolean squaredInput, boolean inverted)
     {
         if (inverted)
         {
@@ -81,7 +83,7 @@ public class HalRobotDrive extends RobotDrive
             rightPower = -swap;
         }
 
-        tankDrive(leftPower, rightPower);
+        super.tankDrive(leftPower, rightPower, squaredInput);
     }   //tankDrive
 
     /**
@@ -91,15 +93,38 @@ public class HalRobotDrive extends RobotDrive
      *
      * @param drivePower specifies the drive power value.
      * @param turnPower specifies the turn power value.
+     * @param squaredInput specifies true to square the input values, false otherwise.
+     */
+    public void arcadeDrive(
+            double drivePower, double turnPower, boolean squaredInput)
+    {
+        //
+        // The arcadeDrive in WPILib has the turnPower reversed. It turns left when turnPower
+        // is positive. Our convention is turning right when turnPower is positive. So we need
+        // to override WPILib and negate turn power here.
+        //
+        super.arcadeDrive(drivePower, -turnPower, squaredInput);
+    }   //arcadeDrive
+
+    /**
+     * This method implements arcade drive where drivePower controls how fast
+     * the robot goes in the y-axis and turnPower controls how fast it will
+     * turn.
+     *
+     * @param drivePower specifies the drive power value.
+     * @param turnPower specifies the turn power value.
+     * @param squaredInput specifies true to square the input values, false otherwise.
      * @param inverted specifies true to invert control (i.e. robot front becomes robot back).
      */
-    public void arcadeDrive(double drivePower, double turnPower, boolean inverted)
+    public void arcadeDrive(
+            double drivePower, double turnPower, boolean squaredInput, boolean inverted)
     {
         if (inverted)
         {
             drivePower = -drivePower;
         }
-        arcadeDrive(drivePower, turnPower);
+
+        this.arcadeDrive(drivePower, turnPower, squaredInput);
     }   //arcadeDrive
 
     /**
@@ -121,7 +146,8 @@ public class HalRobotDrive extends RobotDrive
             x = -x;
             y = -y;
         }
-        mecanumDrive_Cartesian(x, y, rotation, gyroAngle);
+        
+        super.mecanumDrive_Cartesian(x, y, rotation, gyroAngle);
     }   //mecanumDrive_Cartesian
 
     /**
@@ -157,7 +183,7 @@ public class HalRobotDrive extends RobotDrive
             direction %= 360.0;
         }
 
-        mecanumDrive_Polar(magnitude, direction, rotation);
+        super.mecanumDrive_Polar(magnitude, direction, rotation);
     }   //mecanumDrive_Polar
 
 }   //HalRobotDrive

@@ -22,18 +22,18 @@ public class RobotInfo
     //
     // CAN IDs.
     //
-    public static final int CANID_LEFTFRONTMOTOR        = 3;    //Orange (40A)
-    public static final int CANID_RIGHTFRONTMOTOR       = 4;    //Yellow (40A)
-    public static final int CANID_LEFTREARMOTOR         = 5;    //Green (40A)
-    public static final int CANID_RIGHTREARMOTOR        = 6;    //Blue (40A)
-    public static final int CANID_LEFT_ELEVATOR         = 7;    //Purple (30A)
-    public static final int CANID_RIGHT_ELEVATOR        = 8;    //Gray (30A)
-    public static final int CANID_PICKUP                = 9;    //White (40A)
-    public static final int CANID_CRANE                 = 10;   //Orange (40A)
-    public static final int CANID_RESERVED              = 11;   //Yellow (40A)
-    public static final int CANID_CRANE_TILTER          = 12;   //Green (40A)
-    public static final int CANID_LEFT_ARM              = 13;   //Blue (30A)
-    public static final int CANID_RIGHT_ARM             = 14;   //Purple (30A)
+    public static final int CANID_LEFTFRONTMOTOR        = 3;    //40A: Orange
+    public static final int CANID_RIGHTFRONTMOTOR       = 4;    //40A: Yellow
+    public static final int CANID_LEFTREARMOTOR         = 5;    //40A: Green
+    public static final int CANID_RIGHTREARMOTOR        = 6;    //40A: Blue
+    public static final int CANID_CRANE_TILTER          = 7;    //40A: Purple
+    public static final int CANID_CRANE                 = 8;    //40A: Gray
+    public static final int CANID_LEFT_ELEVATOR         = 9;    //40A: White
+    public static final int CANID_RIGHT_ELEVATOR        = 10;   //30A: Orange
+    public static final int CANID_LEFT_ARM              = 11;   //30A: Yellow
+    public static final int CANID_RIGHT_ARM             = 12;   //30A: Green
+    public static final int CANID_PICKUP                = 13;   //40A: Blue
+    public static final int CANID_SPARE                 = 14;   //40A: Purple
     
     public static final int CANID_PDP                   = 16;
     public static final int CANID_PCM1                  = 17;
@@ -60,7 +60,7 @@ public class RobotInfo
     //
     // DriveBase subsystem.
     //
-    public static final double DRIVEBASE_Y_SCALE        = 0.01621544056690844936881352331858;
+    public static final double DRIVEBASE_Y_SCALE        = 61.669616429709793669719405297833;
     public static final double ENCODER_Y_KP             = 0.012;
     public static final double ENCODER_Y_KI             = 0.0;
     public static final double ENCODER_Y_KD             = 0.01;
@@ -85,7 +85,7 @@ public class RobotInfo
     //
     // Elevator subsystem.
     //
-    public static final double ELEVATOR_INCHES_PER_CLICK= (2.3562/1120);
+    public static final double ELEVATOR_COUNTS_PER_INCH = (2.3562/1120);
     public static final double ELEVATOR_CAL_POWER       = -0.5;
     public static final byte   ELEVATOR_SYNCGROUP       = 1;
     public static final double ELEVATOR_SYNC_GAIN       = 0.003;

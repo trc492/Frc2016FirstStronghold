@@ -20,16 +20,16 @@ public interface HalMotorController
     /**
      * This method returns the state of the forward limit switch.
      *
-     * @return true if forward limit switch is closed, false otherwise.
+     * @return true if forward limit switch is active, false otherwise.
      */
-    public boolean isFwdLimitSwitchClosed();
+    public boolean isFwdLimitSwitchActive();
 
     /**
      * This method returns the state of the reverse limit switch.
      *
-     * @return true if reverse limit switch is closed, false otherwise.
+     * @return true if reverse limit switch is active, false otherwise.
      */
-    public boolean isRevLimitSwitchClosed();
+    public boolean isRevLimitSwitchActive();
 
     /**
      * This method resets the motor position sensor, typically an encoder.
@@ -54,15 +54,12 @@ public interface HalMotorController
     public void setInverted(boolean inverted);
 
     /**
-     * This method sets the output of the motor controller. Typically, the output is power.
-     * However, some motor controllers are capable of other operating modes such as position,
-     * speed, voltage, current, etc. When operating in those modes, output specifies the
-     * appropriate value for that operating mode.
+     * This method sets the output power of the motor controller.
      *
-     * @param output specifies the output for the motor controller. If the output is power, it
-     *               is in the range of -1.0 to 1.0.
+     * @param output specifies the output power for the motor controller in the range of
+     *               -1.0 to 1.0.
      */
-    public void setOutput(double output);
+    public void setPower(double power);
 
     /**
      * This method inverts the position sensor direction. This may be rare but

@@ -39,7 +39,7 @@ public class Arm implements TrcPidController.PidInput
                 leftMotor, rightMotor,
                 RobotInfo.ARM_SYNC_GAIN,
                 pidCtrl); 
-        pidMotor.setPositionScale(RobotInfo.ELEVATOR_INCHES_PER_CLICK);
+        pidMotor.setPositionScale(RobotInfo.ELEVATOR_COUNTS_PER_INCH);
     }
 
     public void displayDebugInfo(int lineNum)
