@@ -86,8 +86,7 @@ public class RobotInfo
     // Elevator subsystem.
     //
     public static final double ELEVATOR_COUNTS_PER_INCH = (2.3562/1120);
-    public static final double ELEVATOR_CAL_POWER       = -0.5;
-    public static final byte   ELEVATOR_SYNCGROUP       = 1;
+    public static final double ELEVATOR_CAL_POWER       = -0.3;
     public static final double ELEVATOR_SYNC_GAIN       = 0.003;
     public static final double ELEVATOR_KP              = 0.3;
     public static final double ELEVATOR_KI              = 0.0;
@@ -102,18 +101,16 @@ public class RobotInfo
     //
     // Arm subsystem.
     //
-    public static final double ARM_SCALE           = (2.3562/1120);
-    public static final byte   ARM_SYNCGROUP       = 2;
-    public static final double ARM_SYNC_GAIN       = 0.003;
-    public static final double ARM_KP              = 0.3;
-    public static final double ARM_KI              = 0.0;
-    public static final double ARM_KD              = 0.0;
-    public static final double ARM_KF              = 0.0;
-    public static final double ARM_TOLERANCE       = 1.0;
-    public static final double ARM_SETTLING        = 0.2;
-    public static final double ARM_MIN_POSITION    = -1.0;
-    public static final double ARM_MAX_POSITION    = 44.5;
-    public static final double ARM_UP_DELTA        = 5.0;
-    public static final double ARM_DOWN_DELTA      = -5.0;
+    public static final double ARM_COUNTS_PER_DEGREE    = (2.3562/1120);
+    public static final double ARM_CAL_POWER            = -0.3;
+    public static final double ARM_SYNC_GAIN            = 0.003;
+    public static final double ARM_KP                   = 0.3;
+    public static final double ARM_KI                   = 0.0;
+    public static final double ARM_KD                   = 0.0;
+    public static final double ARM_KF                   = 0.0;
+    public static final double ARM_TOLERANCE            = 1.0;
+    public static final double ARM_SETTLING             = 0.2;
+    public static final double ARM_MIN_POSITION         = 0.0;
+    public static final double ARM_MAX_POSITION         = 44.5;
  
 }   //class RobotInfo

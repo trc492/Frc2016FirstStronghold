@@ -1,10 +1,10 @@
 package frc492;
 
+import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcCANTalon;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
-import trclib.TrcUtil;
 
 public class Arm implements TrcPidController.PidInput
 {
@@ -20,10 +20,22 @@ public class Arm implements TrcPidController.PidInput
         rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ARM);
         leftMotor.setInverted(true);
         rightMotor.setInverted(false);
-        leftMotor.reverseSensor(true);
-        rightMotor.reverseSensor(false);
-        leftMotor.enableBrakeMode(true);
-        rightMotor.enableBrakeMode(true);
+        leftMotor.setRevLimitSwitchEnabled(true);
+        rightMotor.setRevLimitSwitchEnabled(true);
+        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        /*
+        leftMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
+        rightMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
+        leftMotor.setReverseSoftLimit(leftZeroPosition);
+        rightMotor.setReverseSoftLimit(rightZeroPosition);
+        leftMotor.setForwardSoftLimit(
+                leftZeroPosition + RobotInfo.ARM_MAX_POSITION*RobotInfo.ARM_COUNTS_PER_DEGREE);
+        rightMotor.setForwardSoftLimit(
+                rightZeroPosition + RobotInfo.ARM_MAX_POSITION*RobotInfo.ARM_COUNTS_PER_DEGREE);
+        leftMotor.enableForwardSoftLimit(true);
+        rightMotor.enableForwardSoftLimit(true);
+        */
         pidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.ARM_KP,
@@ -34,26 +46,18 @@ public class Arm implements TrcPidController.PidInput
                 RobotInfo.ARM_SETTLING,
                 this);
         pidCtrl.setAbsoluteSetPoint(true);
+
         pidMotor = new TrcPidMotor(
                 moduleName,
                 leftMotor, rightMotor,
                 RobotInfo.ARM_SYNC_GAIN,
                 pidCtrl); 
-        pidMotor.setPositionScale(RobotInfo.ELEVATOR_COUNTS_PER_INCH);
+        pidMotor.setPositionScale(RobotInfo.ARM_COUNTS_PER_DEGREE);
     }
 
     public void displayDebugInfo(int lineNum)
     {
         pidCtrl.displayPidInfo(lineNum);
-    }
-
-    public void setDeltaPosition(double deltaPosition)
-    {
-        double targetPosition = TrcUtil.limit(
-                getPosition() + deltaPosition,
-                RobotInfo.ARM_MIN_POSITION,
-                RobotInfo.ARM_MAX_POSITION);
-        pidMotor.setTarget(targetPosition, true);
     }
 
     public void setPosition(double position)
@@ -68,7 +72,14 @@ public class Arm implements TrcPidController.PidInput
 
     public double getPosition()
     {
-        return (leftMotor.getPosition() + rightMotor.getPosition())*RobotInfo.ARM_SCALE/2.0;
+        double leftPos = leftMotor.getPosition();
+        double rightPos = rightMotor.getPosition();
+        return (leftPos + rightPos)/RobotInfo.ARM_COUNTS_PER_DEGREE/2.0;
+    }
+
+    public void zeroCalibrate()
+    {
+        pidMotor.zeroCalibrate(RobotInfo.ARM_CAL_POWER);
     }
 
     public void setPower(double power)
@@ -79,6 +90,7 @@ public class Arm implements TrcPidController.PidInput
                 RobotInfo.ARM_MAX_POSITION,
                 true);
     }
+
     //
     // Implements TrcPidController.PidInput.
     //

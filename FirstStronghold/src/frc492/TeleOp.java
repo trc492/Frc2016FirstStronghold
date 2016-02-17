@@ -98,6 +98,17 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         //
         // DriveBase operation.
         //
+        /*
+        double x = leftDriveStick.getXWithDeadband(true);
+        double y = rightDriveStick.getYWithDeadband(true);
+        double rot = rightDriveStick.getTwistWithDeadband(true);
+        robot.driveBase.mecanumDrive_Cartesian(x, y, rot, 0.0);
+        */
+        /*
+        double leftPower = leftDriveStick.getYWithDeadband(true);
+        double rightPower = rightDriveStick.getYWithDeadband(true);
+        robot.driveBase.tankDrive(leftPower, rightPower);
+        */
         double drivePower = rightDriveStick.getYWithDeadband(true);
         double turnPower = rightDriveStick.getTwistWithDeadband(true);
         if (slowDriveOverride)
@@ -122,6 +133,12 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         {
             robot.elevator.displayDebugInfo(1);
         }
+        /*
+        double power = operatorStick.getYWithDeadband(true);
+        robot.pickup.setPower(power);
+        FrcRobotBase.getRobotTracer().traceInfo(
+                "TeleOp", "Enc=%.0f", robot.pickup.getPosition());
+                */
 
         robot.updateDashboard();
     }   //runPeriodic
@@ -264,7 +281,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             case FrcJoystick.LOGITECH_BUTTON7:
                 if (pressed)
                 {
-                    robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+                    robot.elevator.zeroCalibrate();
                 }
                 break;
 

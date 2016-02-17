@@ -30,6 +30,7 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
 {
     private boolean fwdLimitSwitchEnabled = false;
     private boolean revLimitSwitchEnabled = false;
+    private double zeroPosition = 0.0;
     
     /**
      * Constructor: Create an instance of the object.
@@ -95,7 +96,20 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     @Override
     public double getPosition()
     {
-        return super.getPosition();
+        double pos = 0.0;
+        
+        if (isSensorPresent(FeedbackDevice.QuadEncoder) ==
+            FeedbackDeviceStatus.FeedbackStatusPresent)
+        {
+            pos = super.getPosition();
+        }
+        else if (isSensorPresent(FeedbackDevice.AnalogPot) ==
+                 FeedbackDeviceStatus.FeedbackStatusPresent)
+        {
+            pos = super.getPosition() - zeroPosition;
+        }
+
+        return pos;
     }   //getPosition
 
     /**
@@ -136,8 +150,17 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
      */
     public void resetPosition()
     {
-        super.setPosition(0.0);
-    }   //
+        if (isSensorPresent(FeedbackDevice.QuadEncoder) ==
+            FeedbackDeviceStatus.FeedbackStatusPresent)
+        {
+            super.setPosition(0.0);
+        }
+        else if (isSensorPresent(FeedbackDevice.AnalogPot) ==
+                 FeedbackDeviceStatus.FeedbackStatusPresent)
+        {
+            zeroPosition = super.getPosition();
+        }
+    }   //resetPosition
 
     /**
      * This method enables/disables motor brake mode. In motor brake mode, set power to 0 would

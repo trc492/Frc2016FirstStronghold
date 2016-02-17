@@ -1,9 +1,8 @@
-/*
- * Lift and lower arms
- */
 package frc492;
 
+import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcCANTalon;
+import frclib.FrcRobotBase;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
@@ -11,13 +10,12 @@ import trclib.TrcPidMotor;
 public class Elevator implements TrcPidController.PidInput
 {
     private static final String moduleName = "Elevator";
+
     private FrcCANTalon leftMotor;
     private FrcCANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
     private boolean elevatorOverride = false;
-    private double lastHeight = 0.0;
-    private boolean stopped = true;
 
     /*
      * Constructor
@@ -28,10 +26,19 @@ public class Elevator implements TrcPidController.PidInput
         rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ELEVATOR);
         leftMotor.setInverted(true);
         rightMotor.setInverted(false);
+        leftMotor.setRevLimitSwitchEnabled(true);
+        rightMotor.setRevLimitSwitchEnabled(true);
+        leftMotor.setFwdLimitSwitchEnabled(true);
+        rightMotor.setFwdLimitSwitchEnabled(true);
+        leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        leftMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
+        rightMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
         leftMotor.reverseSensor(true);
         rightMotor.reverseSensor(false);
-        leftMotor.enableBrakeMode(true);
-        rightMotor.enableBrakeMode(true);
+
         pidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.ELEVATOR_KP,
@@ -42,17 +49,13 @@ public class Elevator implements TrcPidController.PidInput
                 RobotInfo.ELEVATOR_SETTLING,
                 this);
         pidCtrl.setAbsoluteSetPoint(true);
-        leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
+
         pidMotor = new TrcPidMotor(
                 moduleName,
                 leftMotor, rightMotor,
                 RobotInfo.ELEVATOR_SYNC_GAIN,
                 pidCtrl);
-        pidMotor.setPositionScale(RobotInfo.ELEVATOR_INCHES_PER_CLICK);
-        lastHeight = getHeight();
+        pidMotor.setPositionScale(RobotInfo.ELEVATOR_COUNTS_PER_INCH);
     }
 
     public void displayDebugInfo(int lineNum)
@@ -65,24 +68,17 @@ public class Elevator implements TrcPidController.PidInput
         elevatorOverride = enabled;
     }
     
-    public void zeroCalibrate(double calPower)
+    public void zeroCalibrate()
     {
-        pidMotor.zeroCalibrate(calPower);
-        lastHeight = getHeight();
+        pidMotor.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
     }
 
     public void setPower(double power)
     {
-        /*
-        leftMotor.set(power);
-        rightMotor.set(power);
-        if (power != 0.0)
-        {
-            System.out.printf("p=%.2f,lEnc=%.0f,rEnc=%.0f\n",
-                power, leftMotor.getPosition(), rightMotor.getPosition());
-        }
-        */
         pidMotor.setPower(power);
+        FrcRobotBase.getRobotTracer().traceInfo(
+                moduleName, "Power=%.2f, lEnc=%.0f, rEnc=%.0f",
+                power, leftMotor.getPosition(), rightMotor.getPosition());
         /*
         if (elevatorOverride)
         {
@@ -96,19 +92,6 @@ public class Elevator implements TrcPidController.PidInput
                     RobotInfo.ELEVATOR_MAX_HEIGHT,
                     true);
         }
-
-        if (power == 0.0)
-        {
-            if (!stopped)
-            {
-                lastHeight = getHeight();
-            }
-            stopped = true;
-        }
-        else
-        {
-            stopped = false;
-        }
         */
     }
 
@@ -118,24 +101,9 @@ public class Elevator implements TrcPidController.PidInput
         rightMotor.resetPosition();
     }   //resetPosition
     
-    public void setDeltaHeight(double deltaHeight)
-    {
-        lastHeight += deltaHeight;
-        if (lastHeight > RobotInfo.ELEVATOR_MAX_HEIGHT)
-        {
-            lastHeight = RobotInfo.ELEVATOR_MAX_HEIGHT;
-        }
-        else if (lastHeight < RobotInfo.ELEVATOR_MIN_HEIGHT)
-        {
-            lastHeight = RobotInfo.ELEVATOR_MIN_HEIGHT;
-        }
-        pidMotor.setTarget(lastHeight, true);
-    }
-
     public void setHeight(double height)
     {
         pidMotor.setTarget(height, true);
-        lastHeight = height;
     }
 
     public void setHeight(double height, TrcEvent event, double timeout)
@@ -145,20 +113,28 @@ public class Elevator implements TrcPidController.PidInput
 
     public double getHeight()
     {
-        return (leftMotor.getPosition() + rightMotor.getPosition())*
-               RobotInfo.ELEVATOR_INCHES_PER_CLICK/2.0;
+        return (leftMotor.getPosition() + rightMotor.getPosition())/2.0/
+               RobotInfo.ELEVATOR_COUNTS_PER_INCH;
     }
 
-    public boolean isUpperLimitSwitchActive()
+    public boolean isLeftUpperLimitSwitchActive()
     {
-        return !leftMotor.isFwdLimitSwitchClosed() &&
-               !rightMotor.isFwdLimitSwitchClosed();
+        return leftMotor.isFwdLimitSwitchActive();
     }
 
-    public boolean isLowerLimitSwitchActive()
+    public boolean isLeftLowerLimitSwitchActive()
     {
-        return !leftMotor.isRevLimitSwitchClosed() &&
-               !rightMotor.isRevLimitSwitchClosed();
+        return leftMotor.isRevLimitSwitchActive();
+    }
+    
+    public boolean isRightUpperLimitSwitchActive()
+    {
+        return rightMotor.isFwdLimitSwitchActive();
+    }
+
+    public boolean isRightLowerLimitSwitchActive()
+    {
+        return rightMotor.isRevLimitSwitchActive();
     }
 
     //

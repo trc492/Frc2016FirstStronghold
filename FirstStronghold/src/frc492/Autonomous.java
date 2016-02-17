@@ -51,7 +51,8 @@ public class Autonomous implements TrcRobot.RobotMode
     
     public void startMode()
     {
-        robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+        robot.arm.zeroCalibrate();
+        robot.elevator.zeroCalibrate();
 
         AutoMode selectedAutoMode = (AutoMode)(autoChooser.getSelected());
         switch (selectedAutoMode)

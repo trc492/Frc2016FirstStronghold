@@ -164,14 +164,6 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         rightRearMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
 
         //
-        // Reset encoders.
-        //
-        leftFrontMotor.setPosition(0.0);
-        leftRearMotor.setPosition(0.0);
-        rightFrontMotor.setPosition(0.0);
-        rightRearMotor.setPosition(0.0);
-
-        //
         // Initialize DriveBase subsystem.
         //
         driveBase = new TrcDriveBase(
@@ -180,10 +172,6 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                 rightFrontMotor,
                 rightRearMotor,
                 gyro);
-        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kFrontLeft, false);
-        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kRearLeft, false);
-        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kFrontRight, false);
-        driveBase.setInvertedMotor(TrcDriveBase.MotorType.kRearRight, false);
 
         //
         // Create PID controllers for DriveBase PID drive.
@@ -336,12 +324,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         //
         // Elevator info.
         //
-        HalDashboard.putNumber(
-                "Elevator Height", elevator.getHeight());
-        HalDashboard.putBoolean(
-                "LowerLimitSW", !elevator.isLowerLimitSwitchActive());
-        HalDashboard.putBoolean(
-                "UpperLimitSW", !elevator.isUpperLimitSwitchActive());
+        HalDashboard.putNumber("Elevator Height", elevator.getHeight());
+        HalDashboard.putBoolean("LeftLowerLimitSW", elevator.isLeftLowerLimitSwitchActive());
+        HalDashboard.putBoolean("LeftUpperLimitSW", elevator.isLeftUpperLimitSwitchActive());
+        HalDashboard.putBoolean("RightLowerLimitSW", elevator.isRightLowerLimitSwitchActive());
+        HalDashboard.putBoolean("RightUpperLimitSW", elevator.isRightUpperLimitSwitchActive());
         //
         // USB camera streaming.
         //
@@ -406,9 +393,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                     1, "ElevatorHeight=%5.1f",
                     elevator.getHeight());
             dashboard.displayPrintf(
-                    2, "LowerLimit=%s, UpperLimit=%s",
-                    Boolean.toString(elevator.isLowerLimitSwitchActive()),
-                    Boolean.toString(elevator.isUpperLimitSwitchActive()));
+                    2, "LeftLimit=%d/%d, RightLimit=%d/%d",
+                    elevator.isLeftLowerLimitSwitchActive()? 1: 0,
+                    elevator.isLeftUpperLimitSwitchActive()? 1: 0,
+                    elevator.isRightLowerLimitSwitchActive()? 1: 0,
+                    elevator.isRightUpperLimitSwitchActive()? 1: 0);
             elevator.displayDebugInfo(3);
         }
         else if (debugPidSonar)
