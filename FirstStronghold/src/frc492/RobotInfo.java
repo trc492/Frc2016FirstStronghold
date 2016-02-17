@@ -60,6 +60,13 @@ public class RobotInfo
     //
     // DriveBase subsystem.
     //
+    public static final double DRIVEBASE_X_SCALE        = 75.695968948315512041060994714416;
+    public static final double ENCODER_X_KP             = 0.045;
+    public static final double ENCODER_X_KI             = 0.0;
+    public static final double ENCODER_X_KD             = 0.0;
+    public static final double ENCODER_X_KF             = 0.0;
+    public static final double ENCODER_X_TOLERANCE      = 1.0;
+    public static final double ENCODER_X_SETTLING       = 0.2;
     public static final double DRIVEBASE_Y_SCALE        = 61.669616429709793669719405297833;
     public static final double ENCODER_Y_KP             = 0.012;
     public static final double ENCODER_Y_KI             = 0.0;

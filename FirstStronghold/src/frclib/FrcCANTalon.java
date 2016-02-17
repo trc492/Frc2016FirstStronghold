@@ -96,17 +96,11 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     @Override
     public double getPosition()
     {
-        double pos = 0.0;
+        double pos = super.getPosition();
         
-        if (isSensorPresent(FeedbackDevice.QuadEncoder) ==
-            FeedbackDeviceStatus.FeedbackStatusPresent)
+        if (isSensorPresent(FeedbackDevice.AnalogPot) == FeedbackDeviceStatus.FeedbackStatusPresent)
         {
-            pos = super.getPosition();
-        }
-        else if (isSensorPresent(FeedbackDevice.AnalogPot) ==
-                 FeedbackDeviceStatus.FeedbackStatusPresent)
-        {
-            pos = super.getPosition() - zeroPosition;
+            pos -= zeroPosition;
         }
 
         return pos;
@@ -150,15 +144,13 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
      */
     public void resetPosition()
     {
-        if (isSensorPresent(FeedbackDevice.QuadEncoder) ==
-            FeedbackDeviceStatus.FeedbackStatusPresent)
-        {
-            super.setPosition(0.0);
-        }
-        else if (isSensorPresent(FeedbackDevice.AnalogPot) ==
-                 FeedbackDeviceStatus.FeedbackStatusPresent)
+        if (isSensorPresent(FeedbackDevice.AnalogPot) == FeedbackDeviceStatus.FeedbackStatusPresent)
         {
             zeroPosition = super.getPosition();
+        }
+        else
+        {
+            super.setPosition(0.0);
         }
     }   //resetPosition
 

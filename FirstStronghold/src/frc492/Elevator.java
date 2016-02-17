@@ -77,8 +77,10 @@ public class Elevator implements TrcPidController.PidInput
     {
         pidMotor.setPower(power);
         FrcRobotBase.getRobotTracer().traceInfo(
-                moduleName, "Power=%.2f, lEnc=%.0f, rEnc=%.0f",
-                power, leftMotor.getPosition(), rightMotor.getPosition());
+                moduleName, "Power=%.2f, lEnc=%.0f, rEnc=%.0f, LSs=%d/%d, RSw=%d/%d",
+                power, leftMotor.getPosition(), rightMotor.getPosition(),
+                leftMotor.isRevLimitSwitchActive()? 1: 0, leftMotor.isFwdLimitSwitchActive()? 1: 0,
+                rightMotor.isRevLimitSwitchActive()? 1: 0, rightMotor.isFwdLimitSwitchActive()? 1: 0);
         /*
         if (elevatorOverride)
         {

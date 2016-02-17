@@ -31,7 +31,7 @@ import trclib.TrcTaskMgr;
 
 public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
 {
-    private static final String moduleName = "TrcJoystick";
+    private static final String moduleName = "FrcJoystick";
     private static final boolean debugEnabled = false;
     private TrcDbgTrace dbgTrace = null;
 
@@ -39,59 +39,59 @@ public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
     // Logitech Joystick:
     // UsagePage=0x01, Usage-0x04
     //
-    public static final int LOGITECH_TRIGGER    = 1 << 0;
-    public static final int LOGITECH_BUTTON2    = 1 << 1;
-    public static final int LOGITECH_BUTTON3    = 1 << 2;
-    public static final int LOGITECH_BUTTON4    = 1 << 3;
-    public static final int LOGITECH_BUTTON5    = 1 << 4;
-    public static final int LOGITECH_BUTTON6    = 1 << 5;
-    public static final int LOGITECH_BUTTON7    = 1 << 6;
-    public static final int LOGITECH_BUTTON8    = 1 << 7;
-    public static final int LOGITECH_BUTTON9    = 1 << 8;
-    public static final int LOGITECH_BUTTON10   = 1 << 9;
-    public static final int LOGITECH_BUTTON11   = 1 << 10;
-    public static final int LOGITECH_BUTTON12   = 1 << 11;
+    public static final int LOGITECH_TRIGGER    = (1 << 0);
+    public static final int LOGITECH_BUTTON2    = (1 << 1);
+    public static final int LOGITECH_BUTTON3    = (1 << 2);
+    public static final int LOGITECH_BUTTON4    = (1 << 3);
+    public static final int LOGITECH_BUTTON5    = (1 << 4);
+    public static final int LOGITECH_BUTTON6    = (1 << 5);
+    public static final int LOGITECH_BUTTON7    = (1 << 6);
+    public static final int LOGITECH_BUTTON8    = (1 << 7);
+    public static final int LOGITECH_BUTTON9    = (1 << 8);
+    public static final int LOGITECH_BUTTON10   = (1 << 9);
+    public static final int LOGITECH_BUTTON11   = (1 << 10);
+    public static final int LOGITECH_BUTTON12   = (1 << 11);
     //
     // Logitech DualAction Game Controller:
     // UsagePage=0x01, Usage-0x04
     //
-    public static final int DUALACTION_BUTTONX  = 1 << 0;
-    public static final int DUALACTION_BUTTONA  = 1 << 1;
-    public static final int DUALACTION_BUTTONB  = 1 << 2;
-    public static final int DUALACTION_BUTTONY  = 1 << 3;
-    public static final int DUALACTION_LB       = 1 << 4;
-    public static final int DUALACTION_RB       = 1 << 5;
-    public static final int DUALACTION_LT       = 1 << 6;
-    public static final int DUALACTION_RT       = 1 << 7;
-    public static final int DUALACTION_BACK     = 1 << 8;
-    public static final int DUALACTION_START    = 1 << 9;
-    public static final int DUALACTION_LTOP     = 1 << 10;
-    public static final int DUALACTION_RTOP     = 1 << 11;
+    public static final int DUALACTION_BUTTONX  = (1 << 0);
+    public static final int DUALACTION_BUTTONA  = (1 << 1);
+    public static final int DUALACTION_BUTTONB  = (1 << 2);
+    public static final int DUALACTION_BUTTONY  = (1 << 3);
+    public static final int DUALACTION_LB       = (1 << 4);
+    public static final int DUALACTION_RB       = (1 << 5);
+    public static final int DUALACTION_LT       = (1 << 6);
+    public static final int DUALACTION_RT       = (1 << 7);
+    public static final int DUALACTION_BACK     = (1 << 8);
+    public static final int DUALACTION_START    = (1 << 9);
+    public static final int DUALACTION_LTOP     = (1 << 10);
+    public static final int DUALACTION_RTOP     = (1 << 11);
     //
     // Microsoft SideWinder Joystick:
     // UsagePage=0x01, Usage-0x04
     //
-    public static final int SIDEWINDER_TRIGGER  = 1 << 0;
-    public static final int SIDEWINDER_BUTTON2  = 1 << 1;
-    public static final int SIDEWINDER_BUTTON3  = 1 << 2;
-    public static final int SIDEWINDER_BUTTON4  = 1 << 3;
-    public static final int SIDEWINDER_BUTTON5  = 1 << 4;
-    public static final int SIDEWINDER_BUTTON6  = 1 << 5;
-    public static final int SIDEWINDER_BUTTON7  = 1 << 6;
-    public static final int SIDEWINDER_BUTTON8  = 1 << 7;
-    public static final int SIDEWINDER_BUTTON9  = 1 << 8;
+    public static final int SIDEWINDER_TRIGGER  = (1 << 0);
+    public static final int SIDEWINDER_BUTTON2  = (1 << 1);
+    public static final int SIDEWINDER_BUTTON3  = (1 << 2);
+    public static final int SIDEWINDER_BUTTON4  = (1 << 3);
+    public static final int SIDEWINDER_BUTTON5  = (1 << 4);
+    public static final int SIDEWINDER_BUTTON6  = (1 << 5);
+    public static final int SIDEWINDER_BUTTON7  = (1 << 6);
+    public static final int SIDEWINDER_BUTTON8  = (1 << 7);
+    public static final int SIDEWINDER_BUTTON9  = (1 << 8);
     //
     // Microsoft XBox Game Controller:
     // UsagePage=0x01, Usage-0x05
     //
-    public static final int XBOX_BUTTONA        = 1 << 0;
-    public static final int XBOX_BUTTONB        = 1 << 1;
-    public static final int XBOX_BUTTONX        = 1 << 2;
-    public static final int XBOX_BUTTONY        = 1 << 3;
-    public static final int XBOX_LB             = 1 << 4;
-    public static final int XBOX_RB             = 1 << 5;
-    public static final int XBOX_BACK           = 1 << 6;
-    public static final int XBOX_START          = 1 << 7;
+    public static final int XBOX_BUTTONA        = (1 << 0);
+    public static final int XBOX_BUTTONB        = (1 << 1);
+    public static final int XBOX_BUTTONX        = (1 << 2);
+    public static final int XBOX_BUTTONY        = (1 << 3);
+    public static final int XBOX_LB             = (1 << 4);
+    public static final int XBOX_RB             = (1 << 5);
+    public static final int XBOX_BACK           = (1 << 6);
+    public static final int XBOX_START          = (1 << 7);
 
     private double deadbandThreshold = 0.15;
 

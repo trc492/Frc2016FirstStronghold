@@ -60,6 +60,8 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     private double prevPos = 0.0;
     private double prevTime = 0.0;
     private double prevTarget = 0.0;
+    private boolean motor1ZeroCalDone = false;
+    private boolean motor2ZeroCalDone = false;
     //
     // Stall protection.
     //
@@ -409,9 +411,9 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         // If the limit switch of the direction the motor is traveling is active,
         // don't allow the motor to move.
         //
-        if (power > 0.0 && !motor1.isFwdLimitSwitchActive() ||
-            power < 0.0 && !motor1.isRevLimitSwitchActive())
-        {
+//        if (power > 0.0 && !motor1.isFwdLimitSwitchActive() ||
+//            power < 0.0 && !motor1.isRevLimitSwitchActive())
+//        {
             if (active && stopPid)
             {
                 //
@@ -474,12 +476,12 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
                 setMotorPower(motorPower);
             }
-        }
-        else
-        {
-            motorPower = 0.0;
-            setMotorPower(motorPower);
-        }
+//        }
+//        else
+//        {
+//            motorPower = 0.0;
+//            setMotorPower(motorPower);
+//        }
 
         if (debugEnabled)
         {
@@ -544,6 +546,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     power, minPos, maxPos);
         }
 
+        /*
         //
         // If one of the limit switches is active, don't allow the motor
         // to move in that direction. Reset the position sensor if the
@@ -558,6 +561,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             }
             power = 0.0;
         }
+        */
 
         //
         // If power is negative, set the target to minPos.
@@ -642,7 +646,14 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     "calPower=%f", calPower);
         }
 
+        if (calPower > 0.0)
+        {
+            calPower = -calPower;
+        }
+
         this.calPower = calPower;
+        motor1ZeroCalDone = false;
+        motor2ZeroCalDone = motor2 == null || syncGain == 0.0;
         setActive(true);
 
         if (debugEnabled)
@@ -667,6 +678,16 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     "power=%f", power);
         }
 
+        if (motor1.isRevLimitSwitchActive())
+        {
+            motor1.resetPosition();
+        }
+        
+        if (motor2 != null && syncGain != 0.0 && motor2.isRevLimitSwitchActive())
+        {
+            motor2.resetPosition();
+        }
+        
         if (power == 0.0 || syncGain == 0.0 || calPower != 0.0)
         {
             //
@@ -869,6 +890,26 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             //
             // We are in zero calibration mode.
             //
+            if (!motor1ZeroCalDone && motor1.isRevLimitSwitchActive())
+            {
+                motor1ZeroCalDone = true;
+            }
+            
+            if (!motor2ZeroCalDone && motor2.isRevLimitSwitchActive())
+            {
+                motor2ZeroCalDone = true;
+            }
+
+            if (motor1ZeroCalDone && motor2ZeroCalDone)
+            {
+                //
+                // Done with zero calibration.
+                //
+                calPower = 0.0;
+                setActive(false);
+            }
+            setMotorPower(calPower);
+            /*
             if (calPower < 0.0 && !motor1.isRevLimitSwitchActive() ||
                 calPower > 0.0 && !motor1.isFwdLimitSwitchActive())
             {
@@ -893,6 +934,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 }
                 setActive(false);
             }
+            */
         }
         else
         {

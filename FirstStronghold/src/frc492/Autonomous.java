@@ -14,6 +14,7 @@ public class Autonomous implements TrcRobot.RobotMode
 
     public enum TuneMode
     {
+        TUNEMODE_TIMED_DRIVE,
         TUNEMODE_MOVE_X,
         TUNEMODE_MOVE_Y,
         TUNEMODE_TURN,
@@ -37,7 +38,8 @@ public class Autonomous implements TrcRobot.RobotMode
         HalDashboard.putData("Autonomous Strategies", autoChooser);
 
         tuneChooser = new SendableChooser();
-        tuneChooser.addDefault("Move X 20 ft", TuneMode.TUNEMODE_MOVE_X);
+        tuneChooser.addDefault("Drive for 8 sec", TuneMode.TUNEMODE_TIMED_DRIVE);
+        tuneChooser.addObject("Move X 20 ft", TuneMode.TUNEMODE_MOVE_X);
         tuneChooser.addObject("Move Y 20 ft", TuneMode.TUNEMODE_MOVE_Y);
         tuneChooser.addObject("Turn 360", TuneMode.TUNEMODE_TURN);
         tuneChooser.addObject("Sonar drive 7 in", TuneMode.TUNEMODE_SONAR);

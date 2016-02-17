@@ -1,8 +1,11 @@
 package frc492;
 
+import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcJoystick;
 import frclib.FrcRGBLight;
+import frclib.FrcRobotBase;
 import trclib.TrcBooleanState;
+import trclib.TrcDbgTrace;
 import trclib.TrcRobot;
 
 public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
@@ -71,6 +74,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     {
 //        robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
 //        robot.ultrasonic.setEnabled(true);
+        robot.driveBase.resetPosition();
         if (debugVision)
         {
             if (robot.visionTarget != null)
@@ -95,20 +99,32 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
 
     public void runPeriodic(double elapsedTime)
     {
+        TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
+        
+        /*
+        double p = rightDriveStick.getYWithDeadband(true);
+        robot.leftFrontMotor.setPower(p);
+        */
+        /*
+        dbgTrace.traceInfo(
+                "TeleOpPeriodic", "Enc: lf=%.0f, rf=%.0f, lr=%.0f, rr=%.0f, %s",
+                robot.leftFrontMotor.getPosition(), robot.rightFrontMotor.getPosition(),
+                robot.leftRearMotor.getPosition(), robot.rightRearMotor.getPosition(),
+                robot.leftFrontMotor.isSensorPresent(FeedbackDevice.QuadEncoder).toString());
+                */
         //
         // DriveBase operation.
         //
-        /*
         double x = leftDriveStick.getXWithDeadband(true);
         double y = rightDriveStick.getYWithDeadband(true);
         double rot = rightDriveStick.getTwistWithDeadband(true);
-        robot.driveBase.mecanumDrive_Cartesian(x, y, rot, 0.0);
-        */
+        robot.driveBase.mecanumDrive_Cartesian(x, y, rot);
         /*
         double leftPower = leftDriveStick.getYWithDeadband(true);
         double rightPower = rightDriveStick.getYWithDeadband(true);
         robot.driveBase.tankDrive(leftPower, rightPower);
         */
+        /*
         double drivePower = rightDriveStick.getYWithDeadband(true);
         double turnPower = rightDriveStick.getTwistWithDeadband(true);
         if (slowDriveOverride)
@@ -117,6 +133,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             turnPower /= RobotInfo.DRIVE_SLOW_TURNSCALE;
         }
         robot.driveBase.arcadeDrive(drivePower, turnPower);
+        */
 
         //
         // Elevator operation.
@@ -135,10 +152,8 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         }
         /*
         double power = operatorStick.getYWithDeadband(true);
-        robot.pickup.setPower(power);
-        FrcRobotBase.getRobotTracer().traceInfo(
-                "TeleOp", "Enc=%.0f", robot.pickup.getPosition());
-                */
+        robot.arm.setPower(power);
+        */
 
         robot.updateDashboard();
     }   //runPeriodic

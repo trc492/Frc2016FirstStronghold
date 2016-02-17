@@ -61,6 +61,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     public FrcCANTalon rightFrontMotor;
     public FrcCANTalon rightRearMotor;
     public TrcDriveBase driveBase;
+    public TrcPidController encoderXPidCtrl;
     public TrcPidController encoderYPidCtrl;
     public TrcPidController gyroTurnPidCtrl;
     public TrcPidDrive pidDrive;
@@ -154,6 +155,14 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         leftRearMotor = new FrcCANTalon(RobotInfo.CANID_LEFTREARMOTOR);
         rightFrontMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTFRONTMOTOR);
         rightRearMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTREARMOTOR);
+        leftFrontMotor.setInverted(false);
+        leftRearMotor.setInverted(false);
+        rightFrontMotor.setInverted(true);
+        rightRearMotor.setInverted(true);
+        leftFrontMotor.setPositionSensorInverted(true);
+        leftRearMotor.setPositionSensorInverted(true);
+        rightFrontMotor.setPositionSensorInverted(false);
+        rightRearMotor.setPositionSensorInverted(false);
 
         //
         // Initialize each drive motor controller.
@@ -176,6 +185,15 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         //
         // Create PID controllers for DriveBase PID drive.
         //
+        encoderXPidCtrl = new TrcPidController(
+                "encoderXPidCtrl",
+                RobotInfo.ENCODER_X_KP,
+                RobotInfo.ENCODER_X_KI,
+                RobotInfo.ENCODER_X_KD,
+                RobotInfo.ENCODER_X_KF,
+                RobotInfo.ENCODER_X_TOLERANCE,
+                RobotInfo.ENCODER_X_SETTLING,
+                this);
         encoderYPidCtrl = new TrcPidController(
                 "encoderYPidCtrl",
                 RobotInfo.ENCODER_Y_KP,
@@ -195,7 +213,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                 RobotInfo.GYRO_TURN_SETTLING,
                 this);
         pidDrive = new TrcPidDrive(
-                "pidDrive", driveBase, null, encoderYPidCtrl, gyroTurnPidCtrl);
+                "pidDrive", driveBase, encoderXPidCtrl, encoderYPidCtrl, gyroTurnPidCtrl);
 
         sonarYPidCtrl = new TrcPidController(
                 "sonarYPidCtrl",
@@ -210,7 +228,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         sonarYPidCtrl.setInverted(true);;
         sonarPidDrive = new TrcPidDrive(
                 "sonarPidDrive", driveBase,
-                null, sonarYPidCtrl, gyroTurnPidCtrl);
+                encoderXPidCtrl, sonarYPidCtrl, gyroTurnPidCtrl);
 
         //
         // Elevator subsystem.
@@ -286,7 +304,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         //
         teleOpMode = new TeleOp(this);
         autoMode = new Autonomous(this);
-        testMode = new Test();
+        testMode = new Test(this);
         setupRobotModes(teleOpMode, autoMode, testMode, null);
 
         /*
@@ -381,8 +399,9 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         }
         else if (debugPidDrive)
         {
-            encoderYPidCtrl.displayPidInfo(3);
-            gyroTurnPidCtrl.displayPidInfo(5);
+            encoderXPidCtrl.displayPidInfo(3);
+            encoderYPidCtrl.displayPidInfo(5);
+            gyroTurnPidCtrl.displayPidInfo(7);
         }
         else if (debugPidElevator)
         {
@@ -402,8 +421,9 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         }
         else if (debugPidSonar)
         {
-            sonarYPidCtrl.displayPidInfo(3);
-            gyroTurnPidCtrl.displayPidInfo(5);
+            encoderXPidCtrl.displayPidInfo(3);
+            sonarYPidCtrl.displayPidInfo(5);
+            gyroTurnPidCtrl.displayPidInfo(7);
         }
     }   //updateDashboard
 
@@ -455,9 +475,13 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     {
         double value = 0.0;
 
-        if (pidCtrl == encoderYPidCtrl)
+        if (pidCtrl == encoderXPidCtrl)
         {
-            value = driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE;
+            value = driveBase.getXPosition()/RobotInfo.DRIVEBASE_X_SCALE;
+        }
+        else if (pidCtrl == encoderYPidCtrl)
+        {
+            value = driveBase.getYPosition()/RobotInfo.DRIVEBASE_Y_SCALE;
         }
         else if (pidCtrl == gyroTurnPidCtrl)
         {
