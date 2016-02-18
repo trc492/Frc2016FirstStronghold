@@ -86,8 +86,8 @@ public class Arm implements TrcPidController.PidInput
     {
         pidMotor.setPidPower(
                 power,
-                RobotInfo.ARM_MIN_POSITION,
-                RobotInfo.ARM_MAX_POSITION,
+                RobotInfo.ARM_UP_POSITION,
+                RobotInfo.ARM_DOWN_POSITION,
                 true);
     }
 

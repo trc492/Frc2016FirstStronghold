@@ -31,6 +31,8 @@ public class Crane implements TrcPidController.PidInput
 	private static final double CRANE_MIN_HEIGHT = 0.0;	
 	private static final double CRANE_TILT_MAX_ANGLE = 0.0;
 	private static final double CRANE_TILT_MIN_ANGLE = 0.0;
+	private static final double CRANE_CAL_POWER = -0.3;
+	private static final double TILT_CAL_POWER = -0.3;
 	
 	private static final String moduleName = "Crane";
     private FrcCANTalon craneMotor;
@@ -41,8 +43,6 @@ public class Crane implements TrcPidController.PidInput
     private TrcPidMotor tiltPidMotor;
     private boolean craneOverride;
     private boolean tiltOverride;
-    private double lastHeight = 0.0;
-    private double lastAngle = 0.0;
     
     /*
      * Constructor
@@ -55,8 +55,6 @@ public class Crane implements TrcPidController.PidInput
         tiltMotor.setInverted(true);
         craneMotor.reverseSensor(true);
         tiltMotor.reverseSensor(true);
-        craneMotor.enableBrakeMode(true);
-        tiltMotor.enableBrakeMode(true);
         
         cranePidCtrl = new TrcPidController(
                 moduleName,
@@ -80,19 +78,19 @@ public class Crane implements TrcPidController.PidInput
         
         cranePidCtrl.setAbsoluteSetPoint(true);
         tiltPidCtrl.setAbsoluteSetPoint(true);
-        craneMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        
         craneMotor.ConfigRevLimitSwitchNormallyOpen(false);
         tiltMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         tiltMotor.ConfigRevLimitSwitchNormallyOpen(false);
         
         cranePidMotor = new TrcPidMotor(
                 moduleName,
-                craneMotor, tiltMotor,
+                craneMotor,
                 cranePidCtrl);
         
         tiltPidMotor = new TrcPidMotor(
                 moduleName,
-                craneMotor, tiltMotor,
+                tiltMotor,
                 tiltPidCtrl);
         
         cranePidMotor.setPositionScale(CRANE_INCHES_PER_CLICK);
@@ -102,7 +100,7 @@ public class Crane implements TrcPidController.PidInput
     public void displayDebugInfo(int lineNum)
     {
         cranePidCtrl.displayPidInfo(lineNum);
-        tiltPidCtrl.displayPidInfo(lineNum);
+        tiltPidCtrl.displayPidInfo(lineNum + 2);
     }
     
     
@@ -123,16 +121,14 @@ public class Crane implements TrcPidController.PidInput
     /*
      * Zero Calibration
      */
-    public void zeroCraneCalibrate(double calPower)
+    public void zeroCraneCalibrate()
     {
-        cranePidMotor.zeroCalibrate(calPower);
-        lastHeight = getHeight();
+        cranePidMotor.zeroCalibrate(CRANE_CAL_POWER);
     }
     
-    public void zeroTiltCalibrate(double calPower)
+    public void zeroTiltCalibrate()
     {
-        tiltPidMotor.zeroCalibrate(calPower);
-        lastHeight = getHeight();
+        tiltPidMotor.zeroCalibrate(TILT_CAL_POWER);
     }
     
     
@@ -165,44 +161,11 @@ public class Crane implements TrcPidController.PidInput
     
     
     /*
-     * Change height or angle by deltaHeight or deltaAngle
-     */
-    public void setDeltaHeight(double deltaHeight)
-    {
-        lastHeight += deltaHeight;
-        if (lastHeight > CRANE_MAX_HEIGHT)
-        {
-            lastHeight = CRANE_MAX_HEIGHT;
-        }
-        else if (lastHeight < CRANE_MIN_HEIGHT)
-        {
-            lastHeight = CRANE_MIN_HEIGHT;
-        }
-        cranePidMotor.setTarget(lastHeight, true);
-    }
-    
-    public void setDeltaAngle(double deltaAngle)
-    {
-        lastAngle += deltaAngle;
-        if (lastAngle > CRANE_TILT_MAX_ANGLE)
-        {
-        	lastAngle = CRANE_TILT_MAX_ANGLE;
-        }
-        else if (lastAngle < CRANE_TILT_MIN_ANGLE)
-        {
-        	lastAngle = CRANE_TILT_MIN_ANGLE;
-        }
-        tiltPidMotor.setTarget(lastAngle, true);
-    }
-    
-    
-    /*
      * Set height or angle
      */
     public void setHeight(double height)
     {
         cranePidMotor.setTarget(height, true);
-        lastHeight = height;
     }
 
     public void setHeight(double height, TrcEvent event, double timeout)
@@ -213,7 +176,6 @@ public class Crane implements TrcPidController.PidInput
     public void setAngle(double angle)
     {
         tiltPidMotor.setTarget(angle, true);
-        lastAngle = angle;
     }
 
     public void setAngle(double angle, TrcEvent event, double timeout)

@@ -74,7 +74,7 @@ public class RobotInfo
     public static final double ENCODER_Y_KF             = 0.0;
     public static final double ENCODER_Y_TOLERANCE      = 1.0;
     public static final double ENCODER_Y_SETTLING       = 0.2;
-    public static final double GYRO_TURN_KP             = 0.016;
+    public static final double GYRO_TURN_KP             = 0.010;
     public static final double GYRO_TURN_KI             = 0.0;
     public static final double GYRO_TURN_KD             = 0.0;
     public static final double GYRO_TURN_KF             = 0.0;
@@ -117,7 +117,7 @@ public class RobotInfo
     public static final double ARM_KF                   = 0.0;
     public static final double ARM_TOLERANCE            = 1.0;
     public static final double ARM_SETTLING             = 0.2;
-    public static final double ARM_MIN_POSITION         = 0.0;
-    public static final double ARM_MAX_POSITION         = 44.5;
+    public static final double ARM_UP_POSITION          = 0.0;
+    public static final double ARM_DOWN_POSITION        = 44.5;
  
 }   //class RobotInfo

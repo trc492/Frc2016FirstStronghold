@@ -33,12 +33,11 @@ public class AutoTeeterTotter implements AutoStrategy
 	      private static final double DISTANCE_TO_TEETERTOTTER = 1; //giving values move to robot info
 	      private static final double HIGH_SPEED_POWER = 0.7;
 	      private static final double SLOW_SPEED_POWER = 0.3;
-	      private static final double ARM_DOWN_POSITION = 0;
+	      private static final double ARM_GROUND_POSITION = 0;
 	      
 	      
 	      public void autoPeriodic(double elapsedTime) 
 	  	{    	
-	  		boolean ready = sm.isReady();
 	  		
 	  		if (!sm.isReady())
 	  			return;
@@ -54,7 +53,7 @@ public class AutoTeeterTotter implements AutoStrategy
 	  			break;
 	  			
 	  		case STATE_MOVE_ARM_DOWN:
-	  			robot.arm.setPosition(ARM_DOWN_POSITION, armEvent, 0.0);
+	  			robot.arm.setPosition(ARM_GROUND_POSITION, armEvent, 0.0);
 	  			sm.waitForEvents(AutonomousState.STATE_MOVE_ROBOT_SLOWLY);
 	  			break;
 	  			
@@ -66,6 +65,7 @@ public class AutoTeeterTotter implements AutoStrategy
 	  		
 	  		case STOP:
 	  		default:
+	  		    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
 	  			sm.stop ();
 	  		
 	  		}
