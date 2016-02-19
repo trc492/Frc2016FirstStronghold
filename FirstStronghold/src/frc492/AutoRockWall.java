@@ -13,11 +13,12 @@ rebecca cheng~~
 
 public class AutoRockWall implements AutoStrategy
 {
-	public static final double DISTANCE_TO_DEFENSE	= 50;
-    public static final double DISTANCE_TO_WALL 	= 20;
-    public static final double DISTANCE_OVER_WALL 	= 0.0;
-    public static final double ARM_TO_NEUTRAL		= 0.0;
-    public static final double ELEVATOR_TO_NEUTRAL	= 0.0;
+	public static final double DISTANCE_TO_DEFENSE			= 50;
+    public static final double DISTANCE_TO_WALL 			= 20;
+    public static final double SMALL_DISTANCE_OVER_WALL 	= 0.0;
+    public static final double DISTANCE_OVER_WALL			= 0.0;
+    public static final double ARM_TO_NEUTRAL				= 0.0;
+    public static final double ELEVATOR_TO_NEUTRAL			= 0.0;
 	
 	// variables
 	private static final String moduleName = "AutoPortcullis";
@@ -35,6 +36,8 @@ public class AutoRockWall implements AutoStrategy
 		DRIVE_TO_WALL,
 		LOWER_ARMS,
 		DRIVE_FWD,
+		RAISE_ARMS,
+		DRIVE_OVER_WALL,
 		DONE;
 	}
 	
@@ -64,12 +67,10 @@ public class AutoRockWall implements AutoStrategy
             case DRIVE_TO_DEFENSE:
             	/*
             	 * drive to defense fast, put arms up, elevator down
-            	 */
-            	robot.encoderYPidCtrl.setOutputRange(-1.0, 1.0);
-            	
+            	 */            	
             	robot.pidDrive.setTarget(0.0, DISTANCE_TO_DEFENSE, 0.0, false, driveEvent, 2.0);
-            	robot.arm.setPosition(RobotInfo.ARM_UP_POSITION, armEvent, 1.0);
-            	robot.elevator.setHeight(RobotInfo.ELEVATOR_MIN_HEIGHT, elevatorEvent, 1.0);
+            	robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+            	robot.elevator.setHeight(RobotInfo.ELEVATOR_MIN_HEIGHT);
             	
             	sm.addEvent(driveEvent);
             	sm.waitForEvents(State.DRIVE_TO_WALL, 0.0, true);
@@ -103,11 +104,27 @@ public class AutoRockWall implements AutoStrategy
             	 */
             	robot.encoderYPidCtrl.setOutputRange(-.3, .3);
             	
-            	robot.pidDrive.setTarget(0.0, DISTANCE_OVER_WALL, 0.0, false, driveEvent, 2.0);
+            	robot.pidDrive.setTarget(0.0, SMALL_DISTANCE_OVER_WALL, 0.0, false, driveEvent, 1.0);
             	
-            	sm.waitForEvents(State.DONE, 0.0, true);
+            	sm.waitForEvents(State.RAISE_ARMS, 0.0, true);
                 break;
                 
+            case RAISE_ARMS:
+            	/*
+            	 * raise arms 
+            	 */
+                robot.arm.setPosition(RobotInfo.ARM_UP_POSITION, armEvent, 1.0);
+                sm.waitForEvents(State.DRIVE_OVER_WALL, 0.0, true);
+                break;
+                
+            case DRIVE_OVER_WALL:
+            	/*
+            	 * drive over and past the wall
+            	 */
+            	robot.pidDrive.setTarget(0.0, DISTANCE_OVER_WALL, 0.0, false, driveEvent, 2.0);
+            	sm.waitForEvents(State.DONE, 0.0, true);
+                break;
+            	
             case DONE:
             default:
                 //
