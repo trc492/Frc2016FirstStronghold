@@ -21,6 +21,7 @@ public class AutoPortcullis implements AutoStrategy
     public static final double ARM_PORT_LOW         = 0.0;
     public static final double ARM_PORT_UP          = 0.0;
     public static final double DISTANCE_UNDER_PORT  = 0.0;
+    public static final double DISTANCE_PAST_PORT   = 0.0;
 	
 	// variables
 	private static final String moduleName = "AutoPortcullis";
@@ -123,6 +124,7 @@ public class AutoPortcullis implements AutoStrategy
                 //
                 // stop (in the name of love)
                 //
+            	robot.pidDrive.setTarget(0.0, DISTANCE_PAST_PORT, 0, false, driveEvent, 2.0);
                 robot.arm.setPosition(ARM_TO_NEUTRAL);
                 robot.elevator.setHeight(ELEVATOR_TO_NEUTRAL);
                 

@@ -7,22 +7,22 @@ import trclib.TrcRobot.AutoStrategy;
 import trclib.TrcStateMachine;
 
 /*
-Autonomous for rock wall
+Autonomous for ramparts
 rebecca cheng~~
  */
 
-public class AutoRockWall implements AutoStrategy
+public class AutoRamparts implements AutoStrategy
 {
-	public static final double DISTANCE_TO_DEFENSE			= 50;
-    public static final double DISTANCE_TO_WALL 			= 20;
-    public static final double SMALL_DISTANCE_OVER_WALL 	= 0.0;
-    public static final double DISTANCE_OVER_WALL			= 0.0;
-    public static final double ARM_TO_NEUTRAL				= 0.0;
-    public static final double ELEVATOR_TO_NEUTRAL			= 0.0;
-    public static final double DISTANCE_PAST_WALL			= 0.0;
+	public static final double DISTANCE_TO_DEFENSE				= 50;
+    public static final double DISTANCE_TO_RAMPARTS				= 20;
+    public static final double SMALL_DISTANCE_OVER_RAMPARTS 	= 0.0;
+    public static final double DISTANCE_OVER_RAMPARTS			= 0.0;
+    public static final double ARM_TO_NEUTRAL					= 0.0;
+    public static final double ELEVATOR_TO_NEUTRAL				= 0.0;
+    public static final double DISTANCE_PAST_RAMPARTS			= 0.0;
 	
 	// variables
-	private static final String moduleName = "AutoRockWall";
+	private static final String moduleName = "AutoRamparts";
 	//private HalDashboard dashboard = HalDashboard.getInstance();
 	private Robot robot;
 	private TrcEvent driveEvent;
@@ -34,16 +34,16 @@ public class AutoRockWall implements AutoStrategy
 	private enum State
 	{
 		DRIVE_TO_DEFENSE,
-		DRIVE_TO_WALL,
+		DRIVE_TO_RAMPARTS,
 		LOWER_ARMS,
 		DRIVE_FWD,
 		RAISE_ARMS,
-		DRIVE_OVER_WALL,
+		DRIVE_OVER_RAMPARTS,
 		DONE;
 	}
 	
 	// constructor takes: robot, distance from neutral line
-	public AutoRockWall (Robot robot)
+	public AutoRamparts (Robot robot)
 	{
 		this.robot = robot;
 		driveEvent = new TrcEvent(moduleName + ".driveEvent");
@@ -74,16 +74,16 @@ public class AutoRockWall implements AutoStrategy
             	robot.elevator.setHeight(RobotInfo.ELEVATOR_MIN_HEIGHT);
             	
             	sm.addEvent(driveEvent);
-            	sm.waitForEvents(State.DRIVE_TO_WALL, 0.0, true);
+            	sm.waitForEvents(State.DRIVE_TO_RAMPARTS, 0.0, true);
                 break;
             	
-            case DRIVE_TO_WALL:
+            case DRIVE_TO_RAMPARTS:
             	/*
-            	 * drive forward to the wall slowly
+            	 * drive forward to the ramparts slowly
             	 */
             	robot.encoderYPidCtrl.setOutputRange(-.3, .3);
             	
-            	robot.pidDrive.setTarget(0.0, DISTANCE_TO_WALL, 0.0, false, driveEvent, 2.0);
+            	robot.pidDrive.setTarget(0.0, DISTANCE_TO_RAMPARTS, 0.0, false, driveEvent, 2.0);
             	
             	sm.addEvent(driveEvent);
             	sm.waitForEvents(State.LOWER_ARMS, 0.0, true);
@@ -101,11 +101,11 @@ public class AutoRockWall implements AutoStrategy
                 
             case DRIVE_FWD:
             	/*
-            	 * drive over wall slowly
+            	 * drive over ramparts slowly
             	 */
             	robot.encoderYPidCtrl.setOutputRange(-.3, .3);
             	
-            	robot.pidDrive.setTarget(0.0, SMALL_DISTANCE_OVER_WALL, 0.0, false, driveEvent, 1.0);
+            	robot.pidDrive.setTarget(0.0, SMALL_DISTANCE_OVER_RAMPARTS, 0.0, false, driveEvent, 1.0);
             	
             	sm.waitForEvents(State.RAISE_ARMS, 0.0, true);
                 break;
@@ -115,14 +115,14 @@ public class AutoRockWall implements AutoStrategy
             	 * raise arms 
             	 */
                 robot.arm.setPosition(RobotInfo.ARM_UP_POSITION, armEvent, 1.0);
-                sm.waitForEvents(State.DRIVE_OVER_WALL, 0.0, true);
+                sm.waitForEvents(State.DRIVE_OVER_RAMPARTS, 0.0, true);
                 break;
                 
-            case DRIVE_OVER_WALL:
+            case DRIVE_OVER_RAMPARTS:
             	/*
-            	 * drive over and past the wall
+            	 * drive over and past the ramparts
             	 */
-            	robot.pidDrive.setTarget(0.0, DISTANCE_OVER_WALL, 0.0, false, driveEvent, 2.0);
+            	robot.pidDrive.setTarget(0.0, DISTANCE_OVER_RAMPARTS, 0.0, false, driveEvent, 2.0);
             	sm.waitForEvents(State.DONE, 0.0, true);
                 break;
             	
@@ -131,9 +131,9 @@ public class AutoRockWall implements AutoStrategy
                 //
                 // stop (in the name of love)
                 //
-            	robot.pidDrive.setTarget(0.0, DISTANCE_PAST_WALL, 0.0, false, driveEvent, 2.0);
             	robot.arm.setPosition(ARM_TO_NEUTRAL);
                 robot.elevator.setHeight(ELEVATOR_TO_NEUTRAL);
+                robot.pidDrive.setTarget(0.0, DISTANCE_PAST_RAMPARTS, 0.0, false, driveEvent, 2.0);
                 
                 sm.stop();
             }
