@@ -3,6 +3,13 @@ package hallib;
 public interface HalMotorController
 {
     /**
+     * This method returns the state of the motor controller direction.
+     *
+     * @return true if the motor direction is inverted, false otherwise.
+     */
+    public boolean getInverted();
+
+    /**
      * This method returns the motor position by reading the position sensor. The position
      * sensor can be an encoder or a potentiometer.
      *
@@ -18,18 +25,18 @@ public interface HalMotorController
     public double getSpeed();
 
     /**
-     * This method returns the state of the forward limit switch.
+     * This method returns the state of the lower limit switch.
      *
-     * @return true if forward limit switch is active, false otherwise.
+     * @return true if lower limit switch is active, false otherwise.
      */
-    public boolean isFwdLimitSwitchActive();
+    public boolean isLowerLimitSwitchActive();
 
     /**
-     * This method returns the state of the reverse limit switch.
+     * This method returns the state of the upper limit switch.
      *
-     * @return true if reverse limit switch is active, false otherwise.
+     * @return true if upper limit switch is active, false otherwise.
      */
-    public boolean isRevLimitSwitchActive();
+    public boolean isUpperLimitSwitchActive();
 
     /**
      * This method resets the motor position sensor, typically an encoder.

@@ -28,8 +28,8 @@ import hallib.HalMotorController;
 
 public class FrcCANTalon extends CANTalon implements HalMotorController
 {
-    private boolean fwdLimitSwitchEnabled = false;
-    private boolean revLimitSwitchEnabled = false;
+    private boolean feedbackDeviceIsPot = false;
+    private boolean limitSwitchesSwapped = false;
     private double zeroPosition = 0.0;
     
     /**
@@ -73,19 +73,32 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
         resetPosition();
     }   //FrcCANTalon
 
-    public void setFwdLimitSwitchEnabled(boolean enabled)
+    public void setLimitSwitchesSwapped(boolean swapped)
     {
-        fwdLimitSwitchEnabled = enabled;
-    }   //setFwdLimitSwitchEnabled
+        limitSwitchesSwapped = swapped;
+    }   //setLimitSwitchesSwapped
     
-    public void setRevLimitSwitchEnabled(boolean enabled)
+    @Override
+    public void setFeedbackDevice(FeedbackDevice devType)
     {
-        revLimitSwitchEnabled = enabled;
-    }   //setRevLimitSwitchEnabled
+        super.setFeedbackDevice(devType);
+        feedbackDeviceIsPot = devType == FeedbackDevice.AnalogPot;
+    }
     
     //
     // Implements HalMotorController interface.
     //
+
+    /**
+     * This method returns the state of the motor controller direction.
+     *
+     * @return true if the motor direction is inverted, false otherwise.
+     */
+    @Override
+    public boolean getInverted()
+    {
+        return super.getInverted();
+    }   //getInverted
 
     /**
      * This method returns the motor position by reading the position sensor. The position
@@ -98,7 +111,7 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     {
         double pos = super.getPosition();
         
-        if (isSensorPresent(FeedbackDevice.AnalogPot) == FeedbackDeviceStatus.FeedbackStatusPresent)
+        if (feedbackDeviceIsPot)
         {
             pos -= zeroPosition;
         }
@@ -118,33 +131,33 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     }   //getSpeed
 
     /**
-     * This method returns the state of the forward limit switch.
+     * This method returns the state of the lower limit switch.
      *
-     * @return true if forward limit switch is active, false otherwise.
+     * @return true if lower limit switch is active, false otherwise.
      */
     @Override
-    public boolean isFwdLimitSwitchActive()
+    public boolean isLowerLimitSwitchActive()
     {
-        return fwdLimitSwitchEnabled && !isFwdLimitSwitchClosed();
-    }   //isFwdLimitSwitchClosed
+        return limitSwitchesSwapped? !isFwdLimitSwitchClosed(): !isRevLimitSwitchClosed();
+    }   //isLowerLimitSwitchClosed
 
     /**
-     * This method returns the state of the reverse limit switch.
+     * This method returns the state of the upper limit switch.
      *
-     * @return true if reverse limit switch is active, false otherwise.
+     * @return true if upper limit switch is active, false otherwise.
      */
     @Override
-    public boolean isRevLimitSwitchActive()
+    public boolean isUpperLimitSwitchActive()
     {
-        return revLimitSwitchEnabled && !isRevLimitSwitchClosed();
-    }   //isRevLimitSwitchActive
+        return limitSwitchesSwapped? !isRevLimitSwitchClosed(): !isFwdLimitSwitchClosed();
+    }   //isUpperLimitSwitchActive
 
     /**
      * This method resets the motor position sensor, typically an encoder.
      */
     public void resetPosition()
     {
-        if (isSensorPresent(FeedbackDevice.AnalogPot) == FeedbackDeviceStatus.FeedbackStatusPresent)
+        if (feedbackDeviceIsPot)
         {
             zeroPosition = super.getPosition();
         }
@@ -186,14 +199,7 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
      */
     public void setPower(double power)
     {
-        if (power > 0.0 && !isFwdLimitSwitchActive() || power < 0.0 && !isRevLimitSwitchActive())
-        {
-            set(power);
-        }
-        else
-        {
-            set(0.0);
-        }
+        super.set(power);
     }   //setOutput
 
     /**

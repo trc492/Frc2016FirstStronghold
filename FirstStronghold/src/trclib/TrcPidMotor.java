@@ -191,7 +191,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         if (active)
         {
             //
-            // Stop the physical motor(s). If there is a notification event, singal it canceled.
+            // Stop the physical motor(s). If there is a notification event, signal it canceled.
             //
             stop(true);
             if (notifyEvent != null)
@@ -385,10 +385,9 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     }   //setTarget
 
     /**
-     * This method sets the PID motor power. It will check for the limit switches.
-     * If activated, it won't allow the motor to go in that direction. It will also
-     * check for stalled condition and cut motor power if stalled detected. It will
-     * also check to reset the stalled condition if reset timeout was specified.
+     * This method sets the PID motor power. It will also check for stalled condition
+     * and cut motor power if stalled detected. It will also check to reset the stalled
+     * condition if reset timeout was specified.
      *
      * @param power specifies the motor power.
      * @param rangeLow specifies the range low limit.
@@ -407,13 +406,8 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     power, rangeLow, rangeHigh, Boolean.toString(stopPid));
         }
 
-        //
-        // If the limit switch of the direction the motor is traveling is active,
-        // don't allow the motor to move.
-        //
-//        if (power > 0.0 && !motor1.isFwdLimitSwitchActive() ||
-//            power < 0.0 && !motor1.isRevLimitSwitchActive())
-//        {
+        if (power != 0.0 || calPower == 0.0)
+        {
             if (active && stopPid)
             {
                 //
@@ -476,12 +470,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
                 setMotorPower(motorPower);
             }
-//        }
-//        else
-//        {
-//            motorPower = 0.0;
-//            setMotorPower(motorPower);
-//        }
+        }
 
         if (debugEnabled)
         {
@@ -545,23 +534,6 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     "power=%f,minPos=%f,maxPos=%f",
                     power, minPos, maxPos);
         }
-
-        /*
-        //
-        // If one of the limit switches is active, don't allow the motor
-        // to move in that direction. Reset the position sensor if the
-        // lower limit switch is active.
-        //
-        if (motor1.isRevLimitSwitchActive() && power < 0.0 ||
-            motor1.isFwdLimitSwitchActive() && power > 0.0)
-        {
-            if (power < 0.0)
-            {
-                motor1.resetPosition();
-            }
-            power = 0.0;
-        }
-        */
 
         //
         // If power is negative, set the target to minPos.
@@ -632,8 +604,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * This method starts zero calibration mode by moving the motor with specified
      * calibration power until a limit switch is hit.
      *
-     * @param calPower specifies calibration power. Generally, zero calibration
-     *                 means this power value should be negative.
+     * @param calPower specifies calibration power.
      */
     public void zeroCalibrate(double calPower)
     {
@@ -646,12 +617,13 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     "calPower=%f", calPower);
         }
 
-        if (calPower > 0.0)
-        {
-            calPower = -calPower;
-        }
-
-        this.calPower = calPower;
+        //
+        // Calibration power is always negative.
+        // Motor 1 always has a lower limit switch. If there is a motor 2, motor 2
+        // has a lower limit switch only if it is independent of motor 1 and needs
+        // synchronizing with motor 1.
+        //
+        this.calPower = -Math.abs(calPower);
         motor1ZeroCalDone = false;
         motor2ZeroCalDone = motor2 == null || syncGain == 0.0;
         setActive(true);
@@ -678,12 +650,12 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     "power=%f", power);
         }
 
-        if (motor1.isRevLimitSwitchActive())
+        if (motor1.isLowerLimitSwitchActive())
         {
             motor1.resetPosition();
         }
         
-        if (motor2 != null && syncGain != 0.0 && motor2.isRevLimitSwitchActive())
+        if (motor2 != null && syncGain != 0.0 && motor2.isLowerLimitSwitchActive())
         {
             motor2.resetPosition();
         }
@@ -730,7 +702,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             if (debugEnabled)
             {
                 dbgTrace.traceInfo(funcName,
-                        "P=%.2f,dP=%.2f,enc1=%.0f,enc2=%.0f,P1=%.2f,P2=%.2f",
+                        "P=%.2f,dP=%.2f,pos1=%.0f,pos2=%.0f,P1=%.2f,P2=%.2f",
                         power, deltaPower, pos1, pos2, power1, power2);
             }
         }
@@ -876,7 +848,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     @Override
     public void postContinuousTask(TrcRobot.RunMode runMode)
     {
-        final String funcName = "postPeriodic";
+        final String funcName = "postContinuous";
 
         if (debugEnabled)
         {
@@ -890,12 +862,12 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             //
             // We are in zero calibration mode.
             //
-            if (!motor1ZeroCalDone && motor1.isRevLimitSwitchActive())
+            if (!motor1ZeroCalDone && motor1.isLowerLimitSwitchActive())
             {
                 motor1ZeroCalDone = true;
             }
             
-            if (!motor2ZeroCalDone && motor2.isRevLimitSwitchActive())
+            if (!motor2ZeroCalDone && motor2.isLowerLimitSwitchActive())
             {
                 motor2ZeroCalDone = true;
             }
@@ -909,37 +881,11 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 setActive(false);
             }
             setMotorPower(calPower);
-            /*
-            if (calPower < 0.0 && !motor1.isRevLimitSwitchActive() ||
-                calPower > 0.0 && !motor1.isFwdLimitSwitchActive())
-            {
-                //
-                // We are still calibrating and no limit switches are active yet.
-                //
-                setPower(calPower, MIN_MOTOR_POWER, MAX_MOTOR_POWER, false);
-            }
-            else
-            {
-                //
-                // Done with zero calibration.
-                //
-                calPower = 0.0;
-                setMotorPower(0.0);
-                if (motor1.isRevLimitSwitchActive())
-                {
-                    //
-                    // Reset encoder only if lower limit switch is active.
-                    //
-                    motor1.resetPosition();
-                }
-                setActive(false);
-            }
-            */
         }
         else
         {
             //
-            // If we are not holding target and has rearched target or
+            // If we are not holding target and has reached target or
             // we set a timeout and it has expired, we are done with the
             // operation. Stop the motor and if there is a notification
             // event, signal it.
