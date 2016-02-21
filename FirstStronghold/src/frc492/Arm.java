@@ -19,23 +19,14 @@ public class Arm implements TrcPidController.PidInput
         leftMotor = new FrcCANTalon(RobotInfo.CANID_LEFT_ARM);
         rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ARM);
         leftMotor.setInverted(true);
-        rightMotor.setInverted(false);
-        leftMotor.setRevLimitSwitchEnabled(true);
-        rightMotor.setRevLimitSwitchEnabled(true);
-        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        /*
+        rightMotor.setInverted(true);
+        leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        leftMotor.setLimitSwitchesSwapped(true);
+        rightMotor.setLimitSwitchesSwapped(true);
         leftMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
         rightMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
-        leftMotor.setReverseSoftLimit(leftZeroPosition);
-        rightMotor.setReverseSoftLimit(rightZeroPosition);
-        leftMotor.setForwardSoftLimit(
-                leftZeroPosition + RobotInfo.ARM_MAX_POSITION*RobotInfo.ARM_COUNTS_PER_DEGREE);
-        rightMotor.setForwardSoftLimit(
-                rightZeroPosition + RobotInfo.ARM_MAX_POSITION*RobotInfo.ARM_COUNTS_PER_DEGREE);
-        leftMotor.enableForwardSoftLimit(true);
-        rightMotor.enableForwardSoftLimit(true);
-        */
+
         pidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.ARM_KP,
@@ -84,11 +75,15 @@ public class Arm implements TrcPidController.PidInput
 
     public void setPower(double power)
     {
+        leftMotor.setPower(power);
+        rightMotor.setPower(power);
+        /*
         pidMotor.setPidPower(
                 power,
                 RobotInfo.ARM_UP_POSITION,
                 RobotInfo.ARM_DOWN_POSITION,
                 true);
+                */
     }
 
     //

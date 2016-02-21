@@ -9,6 +9,13 @@ public class Autonomous implements TrcRobot.RobotMode
  	public enum AutoMode
     {
         AUTOMODE_NONE,
+        AUTOMODE_LOW_BAR,
+        AUTOMODE_ROUGH_TERRAIN,
+        AUTOMODE_MOAT,
+        AUTOMODE_RAMPARTS,
+        AUTOMODE_ROCK_WALL,
+        AUTOMODE_TEETER_TOTTER,
+        AUTOMODE_PORTCULLIS,
         AUTOMODE_TUNE_ROBOT
     }
 
@@ -21,8 +28,8 @@ public class Autonomous implements TrcRobot.RobotMode
         TUNEMODE_SONAR
     }
 
+    private HalDashboard dashboard = HalDashboard.getInstance();
     private Robot robot;
-    private HalDashboard dashboard;
     private SendableChooser autoChooser;
     private TrcRobot.AutoStrategy autoStrategy;
     private SendableChooser tuneChooser;
@@ -30,10 +37,16 @@ public class Autonomous implements TrcRobot.RobotMode
     public Autonomous(Robot robot)
     {
         this.robot = robot;
-        dashboard = HalDashboard.getInstance();
+        
         autoChooser = new SendableChooser();
         autoChooser.addDefault("No autonomous", AutoMode.AUTOMODE_NONE);
-
+        autoChooser.addObject("Low bar", AutoMode.AUTOMODE_LOW_BAR);
+        autoChooser.addObject("Rough terrain", AutoMode.AUTOMODE_ROUGH_TERRAIN);
+        autoChooser.addObject("Moat", AutoMode.AUTOMODE_MOAT);
+        autoChooser.addObject("Ramparts", AutoMode.AUTOMODE_RAMPARTS);
+        autoChooser.addObject("Rock wall", AutoMode.AUTOMODE_ROCK_WALL);
+        autoChooser.addObject("Teeter totter", AutoMode.AUTOMODE_TEETER_TOTTER);
+        autoChooser.addObject("Portcullis", AutoMode.AUTOMODE_PORTCULLIS);
         autoChooser.addObject("Tune robot", AutoMode.AUTOMODE_TUNE_ROBOT);
         HalDashboard.putData("Autonomous Strategies", autoChooser);
 
@@ -44,7 +57,6 @@ public class Autonomous implements TrcRobot.RobotMode
         tuneChooser.addObject("Turn 360", TuneMode.TUNEMODE_TURN);
         tuneChooser.addObject("Sonar drive 7 in", TuneMode.TUNEMODE_SONAR);
         HalDashboard.putData("Robot tune modes", tuneChooser);
-
      }   //Autonomous
 
     //
@@ -54,20 +66,48 @@ public class Autonomous implements TrcRobot.RobotMode
     public void startMode()
     {
         robot.arm.zeroCalibrate();
-        robot.elevator.zeroCalibrate();
 
         AutoMode selectedAutoMode = (AutoMode)(autoChooser.getSelected());
         switch (selectedAutoMode)
         {
-        case AUTOMODE_NONE:
-            autoStrategy = null;
-            dashboard.displayPrintf(1, "NoAuto");
-            break;
-
-        case AUTOMODE_TUNE_ROBOT:
-            TuneMode selectedTuneMode = (TuneMode)(tuneChooser.getSelected());
-            autoStrategy = new AutoTuneRobot(robot, selectedTuneMode);
-            break;
+            default:
+            case AUTOMODE_NONE:
+                autoStrategy = null;
+                dashboard.displayPrintf(1, "NoAuto");
+                break;
+                
+            case AUTOMODE_LOW_BAR:
+                autoStrategy = new AutoLowBar(robot);
+                break;
+    
+            case AUTOMODE_ROUGH_TERRAIN:
+                autoStrategy = new AutoRoughTerrain(robot);
+                break;
+    
+            case AUTOMODE_MOAT:
+                autoStrategy = new AutoMoat(robot);
+                break;
+    
+            case AUTOMODE_RAMPARTS:
+                autoStrategy = new AutoRamparts(robot);
+                break;
+    
+            case AUTOMODE_ROCK_WALL:
+                autoStrategy = new AutoRockWall(robot);
+                break;
+    
+            case AUTOMODE_TEETER_TOTTER:
+                autoStrategy = new AutoTeeterTotter(robot);
+                break;
+    
+            case AUTOMODE_PORTCULLIS:
+                autoStrategy = new AutoPortcullis(robot);
+                break;
+    
+            case AUTOMODE_TUNE_ROBOT:
+                TuneMode selectedTuneMode = (TuneMode)(tuneChooser.getSelected());
+                autoStrategy = new AutoTuneRobot(robot, selectedTuneMode);
+                break;
         }
     }   //startMode
 

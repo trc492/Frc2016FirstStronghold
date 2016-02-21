@@ -1,18 +1,21 @@
 package frc492;
 
-import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcJoystick;
 import frclib.FrcRGBLight;
-import frclib.FrcRobotBase;
 import trclib.TrcBooleanState;
-import trclib.TrcDbgTrace;
 import trclib.TrcRobot;
 
 public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
 {
-    private static final boolean debugElevator = false;
-    private static final boolean debugVision = false;
+//    private static final boolean debugVision = false;
 
+    private enum DriveMode
+    {
+        MECANUM_MODE,
+        ARCADE_MODE,
+        TANK_MODE
+    }   //enum DriveMode
+    
     private static final FrcRGBLight.RGBColor[] colorTable =
     {
         FrcRGBLight.RGBColor.RGB_BLACK,
@@ -26,6 +29,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     };
 
     private Robot robot;
+    
     //
     // Input subsystem.
     //
@@ -33,11 +37,11 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     private FrcJoystick rightDriveStick;
     private FrcJoystick operatorStick;
 
-    private TrcBooleanState ringLightPowerToggle;
-    private TrcBooleanState ledFlashingToggle;
-    private boolean slowDriveOverride;
-    private boolean slowElevatorOverride;
-    private int colorIndex;
+//    private TrcBooleanState ringLightPowerToggle = new TrcBooleanState("RingLightPower", false);
+    private TrcBooleanState ledFlashingToggle = new TrcBooleanState("LEDFlashing", false);
+    private boolean slowDriveOverride = false;
+    private int colorIndex = 0;
+    private DriveMode driveMode = DriveMode.MECANUM_MODE;
 
     public TeleOp(Robot robot)
     {
@@ -57,13 +61,6 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         operatorStick = new FrcJoystick(
                 "operatorStick",
                 RobotInfo.JSPORT_OPERATORSTICK, this);
-
-        ringLightPowerToggle = new TrcBooleanState("ringLightPower", false);
-        ledFlashingToggle = new TrcBooleanState("LEDFlashing", false);
-
-        slowDriveOverride = false;
-        slowElevatorOverride = false;
-        colorIndex = 0;
     }   //TeleOp
 
     //
@@ -72,9 +69,10 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     
     public void startMode()
     {
-//        robot.elevator.zeroCalibrate(RobotInfo.ELEVATOR_CAL_POWER);
+        robot.arm.zeroCalibrate();
 //        robot.ultrasonic.setEnabled(true);
         robot.driveBase.resetPosition();
+        /*
         if (debugVision)
         {
             if (robot.visionTarget != null)
@@ -82,12 +80,14 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 robot.visionTarget.setVisionTaskEnabled(true);
             }
         }
+        */
     }   //startMode
 
     public void stopMode()
     {
         robot.driveBase.stop();
 //        robot.ultrasonic.setEnabled(false);
+        /*
         if (debugVision)
         {
             if (robot.visionTarget != null)
@@ -95,64 +95,65 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 robot.visionTarget.setVisionTaskEnabled(false);
             }
         }
+        */
     }   //stopMode
 
     public void runPeriodic(double elapsedTime)
     {
-        TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
-        
-        /*
-        double p = rightDriveStick.getYWithDeadband(true);
-        robot.leftFrontMotor.setPower(p);
-        */
-        /*
-        dbgTrace.traceInfo(
-                "TeleOpPeriodic", "Enc: lf=%.0f, rf=%.0f, lr=%.0f, rr=%.0f, %s",
-                robot.leftFrontMotor.getPosition(), robot.rightFrontMotor.getPosition(),
-                robot.leftRearMotor.getPosition(), robot.rightRearMotor.getPosition(),
-                robot.leftFrontMotor.isSensorPresent(FeedbackDevice.QuadEncoder).toString());
-                */
         //
         // DriveBase operation.
         //
-        double x = leftDriveStick.getXWithDeadband(true);
-        double y = rightDriveStick.getYWithDeadband(true);
-        double rot = rightDriveStick.getTwistWithDeadband(true);
-        robot.driveBase.mecanumDrive_Cartesian(x, y, rot);
-        /*
-        double leftPower = leftDriveStick.getYWithDeadband(true);
-        double rightPower = rightDriveStick.getYWithDeadband(true);
-        robot.driveBase.tankDrive(leftPower, rightPower);
-        */
-        /*
-        double drivePower = rightDriveStick.getYWithDeadband(true);
-        double turnPower = rightDriveStick.getTwistWithDeadband(true);
-        if (slowDriveOverride)
+        switch (driveMode)
         {
-            drivePower /= RobotInfo.DRIVE_SLOW_YSCALE;
-            turnPower /= RobotInfo.DRIVE_SLOW_TURNSCALE;
+            case TANK_MODE:
+                double leftPower = leftDriveStick.getYWithDeadband(true);
+                double rightPower = rightDriveStick.getYWithDeadband(true);
+                if (slowDriveOverride)
+                {
+                    leftPower /= RobotInfo.DRIVE_SLOW_YSCALE;
+                    rightPower /= RobotInfo.DRIVE_SLOW_YSCALE;
+                }
+                robot.driveBase.tankDrive(leftPower, rightPower);
+                break;
+                
+            case ARCADE_MODE:
+                double drivePower = rightDriveStick.getYWithDeadband(true);
+                double turnPower = rightDriveStick.getTwistWithDeadband(true);
+                if (slowDriveOverride)
+                {
+                    drivePower /= RobotInfo.DRIVE_SLOW_YSCALE;
+                    turnPower /= RobotInfo.DRIVE_SLOW_TURNSCALE;
+                }
+                robot.driveBase.arcadeDrive(drivePower, turnPower);
+                break;
+
+            default:
+            case MECANUM_MODE:
+                double x = leftDriveStick.getXWithDeadband(true);
+                double y = rightDriveStick.getYWithDeadband(true);
+                double rot = rightDriveStick.getTwistWithDeadband(true);
+                if (slowDriveOverride)
+                {
+                    x /= RobotInfo.DRIVE_SLOW_XSCALE;
+                    y /= RobotInfo.DRIVE_SLOW_YSCALE;
+                    rot /= RobotInfo.DRIVE_SLOW_TURNSCALE;
+                }
+                robot.driveBase.mecanumDrive_Cartesian(x, y, rot);
+                break;
         }
-        robot.driveBase.arcadeDrive(drivePower, turnPower);
-        */
 
         //
-        // Elevator operation.
+        // Arm operation.
         //
-        double elevatorPower = operatorStick.getYWithDeadband(true);
-        if (slowElevatorOverride)
-        {
-            elevatorPower /= 2.0;
-        }
-        
-        robot.elevator.setPower(elevatorPower);
+        double armPower = operatorStick.getYWithDeadband(true);
+        robot.arm.setPower(armPower);
 
-        if (debugElevator)
-        {
-            robot.elevator.displayDebugInfo(1);
-        }
+        //
+        // Winch
+        //
         /*
-        double power = operatorStick.getYWithDeadband(true);
-        robot.arm.setPower(power);
+        double winchPower = operatorStick.getYWithDeadband(true);
+        robot.crane.winchMotor.setPower(winchPower);
         */
 
         robot.updateDashboard();
@@ -175,152 +176,152 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         {
             switch (buttonMask)
             {
-            case FrcJoystick.LOGITECH_TRIGGER:
-                slowDriveOverride = pressed;
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON8:
-                if (robot.rgbLight != null)
-                {
+                case FrcJoystick.LOGITECH_TRIGGER:
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON3:
                     if (pressed)
                     {
-                        ledFlashingToggle.toggleState();
-                        if (ledFlashingToggle.getState())
-                        {
-                            robot.rgbLight.setColor(
-                                    colorTable[colorIndex], 0.5, 0.5, null);
-                        }
-                        else
-                        {
-                            robot.rgbLight.setColor(colorTable[colorIndex]);
-                        }
+                        driveMode = DriveMode.MECANUM_MODE;
                     }
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON9:
-                if (robot.rgbLight != null)
-                {
+                    break;
+                    
+                case FrcJoystick.LOGITECH_BUTTON4:
                     if (pressed)
                     {
-                        colorIndex++;
-                        if (colorIndex >= colorTable.length)
-                        {
-                            colorIndex = 0;
-                        }
-
-                        if (ledFlashingToggle.getState())
-                        {
-                            robot.rgbLight.setColor(
-                                    colorTable[colorIndex], 0.5, 0.5, null);
-                        }
-                        else
-                        {
-                            robot.rgbLight.setColor(colorTable[colorIndex]);
-                        }
+                        driveMode = DriveMode.TANK_MODE;
                     }
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON10:
-                if (debugVision)
-                {
+                    break;
+                    
+                case FrcJoystick.LOGITECH_BUTTON5:
                     if (pressed)
                     {
-                        robot.visionTarget.getTargetReport();
+                        driveMode = DriveMode.ARCADE_MODE;
                     }
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON11:
-                if (debugVision)
-                {
-                    if (pressed && robot.visionTarget != null)
+                    break;
+                    
+                case FrcJoystick.LOGITECH_BUTTON8:
+                    if (robot.rgbLight != null)
                     {
-                        robot.visionTarget.setRingLightPowerOn(
-                                ringLightPowerToggle.toggleState());
+                        if (pressed)
+                        {
+                            ledFlashingToggle.toggleState();
+                            if (ledFlashingToggle.getState())
+                            {
+                                robot.rgbLight.setColor(
+                                        colorTable[colorIndex], 0.5, 0.5, null);
+                            }
+                            else
+                            {
+                                robot.rgbLight.setColor(colorTable[colorIndex]);
+                            }
+                        }
                     }
-                }
-                break;
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON9:
+                    if (robot.rgbLight != null)
+                    {
+                        if (pressed)
+                        {
+                            colorIndex++;
+                            if (colorIndex >= colorTable.length)
+                            {
+                                colorIndex = 0;
+                            }
+    
+                            if (ledFlashingToggle.getState())
+                            {
+                                robot.rgbLight.setColor(
+                                        colorTable[colorIndex], 0.5, 0.5, null);
+                            }
+                            else
+                            {
+                                robot.rgbLight.setColor(colorTable[colorIndex]);
+                            }
+                        }
+                    }
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON10:
+                    /*
+                    if (debugVision)
+                    {
+                        if (pressed)
+                        {
+                            robot.visionTarget.getTargetReport();
+                        }
+                    }
+                    */
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON11:
+                    /*
+                    if (debugVision)
+                    {
+                        if (pressed && robot.visionTarget != null)
+                        {
+                            robot.visionTarget.setRingLightPowerOn(
+                                    ringLightPowerToggle.toggleState());
+                        }
+                    }
+                    */
+                    break;
             }
         }
         else if (joystick == rightDriveStick)
         {
             switch (buttonMask)
             {
-            case FrcJoystick.LOGITECH_TRIGGER:
-                break;
+                case FrcJoystick.LOGITECH_TRIGGER:
+                    slowDriveOverride = pressed;
+                    break;
             }
         }
         else if (joystick == operatorStick)
         {
             switch (buttonMask)
             {
-            case FrcJoystick.LOGITECH_TRIGGER:
-                robot.elevator.setElevatorOverride(pressed);
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON2:
-                slowElevatorOverride = pressed;
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON4:
-                if (pressed)
-                {
-                    robot.arm.setPower(0.5);
-                }
-                else
-                {
-                    robot.arm.setPower(0.0);
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON5:
-                if (pressed)
-                {
-                    robot.arm.setPower(-0.5);
-                }
-                else
-                {
-                    robot.arm.setPower(0.0);
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON6:
-                if (pressed)
-                {
-                    robot.elevator.resetPosition();
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON7:
-                if (pressed)
-                {
-                    robot.elevator.zeroCalibrate();
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON10:
-                if (pressed)
-                {
-                    robot.pickup.set(0.5);
-                }
-                else
-                {
-                    robot.pickup.set(0.0);
-                }
-                break;
-
-            case FrcJoystick.LOGITECH_BUTTON11:
-                if (pressed)
-                {
-                    robot.pickup.set(-1.0);
-                }
-                else
-                {
-                    robot.pickup.set(0.0);
-                }
-                break;
+                case FrcJoystick.LOGITECH_TRIGGER:
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON2:
+                    if (pressed)
+                    {
+                        robot.pickup.set(0.5);
+                    }
+                    else
+                    {
+                        robot.pickup.set(0.0);
+                    }
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON3:
+                    if (pressed)
+                    {
+                        robot.pickup.set(-1.0);
+                    }
+                    else
+                    {
+                        robot.pickup.set(0.0);
+                    }
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON6:
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON7:
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON8:
+                    if (pressed)
+                    {
+                        robot.arm.zeroCalibrate();
+                    }
+                    break;
+    
+                case FrcJoystick.LOGITECH_BUTTON9:
+                    break;
             }
         }
     }   //joystickButtonEvent

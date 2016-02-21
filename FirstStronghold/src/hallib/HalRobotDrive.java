@@ -39,7 +39,7 @@ import trclib.TrcUtil;
 public class HalRobotDrive extends RobotDrive
 {
     private static final String moduleName = "HalRobotDrive";
-    private static final boolean debugEnabled = true;
+    private static final boolean debugEnabled = false;
     private TrcDbgTrace dbgTrace = null;
 
     private static double MOTOR_MAX_VALUE = 1.0;

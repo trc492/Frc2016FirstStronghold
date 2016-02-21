@@ -1,15 +1,12 @@
 package frc492;
 
-import frclib.FrcRobotBase;
-import trclib.TrcDbgTrace;
 import trclib.TrcEvent;
 import trclib.TrcRobot;
 import trclib.TrcStateMachine;
 
-public class Test implements TrcRobot.RobotMode
+public class AutoMoat implements TrcRobot.AutoStrategy
 {
-    private static final String moduleName = "Test";
-    private TrcDbgTrace dbgTrace;
+    private static final String moduleName = "AutoRoughTerrain";
     private Robot robot;
     private TrcStateMachine sm;
     private TrcEvent event;
@@ -20,40 +17,21 @@ public class Test implements TrcRobot.RobotMode
         DONE
     }
 
-    public Test(Robot robot)
+    public AutoMoat(Robot robot)
     {
-        dbgTrace = FrcRobotBase.getRobotTracer();
         this.robot = robot;
         event = new TrcEvent(moduleName);
         sm = new TrcStateMachine(moduleName);
+        sm.start(State.DRIVE_FAST);
      }   //Autonomous
 
     //
-    // Implements TrcRobot.RobotMode.
+    // Implements TrcRobot.AutoStrategy.
     //
     
     @Override
-    public void startMode()
+    public void autoPeriodic(double elapsedTime)
     {
-        sm.start(State.DRIVE_FAST);
-    }   //startMode
-
-    @Override
-    public void stopMode()
-    {
-    }   //stopMode
-
-    @Override
-    public void runPeriodic(double elapsedTime)
-    {
-//        LiveWindow.run();
-    }   //runPeriodic
-
-    @Override
-    public void runContinuous(double elapsedTime)
-    {
-        dbgTrace.traceInfo(moduleName, "State: %s", sm.getState().toString());
-        robot.encoderYPidCtrl.printPidInfo();
         if (sm.isReady())
         {
             State state = (State)sm.getState();
@@ -74,6 +52,6 @@ public class Test implements TrcRobot.RobotMode
                     break;
             }
         }
-    }   //runContinuous
+    }   //autoPeriodic
 
-}   //class Test
+}   //class AutoMoat

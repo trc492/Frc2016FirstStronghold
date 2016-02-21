@@ -1,18 +1,14 @@
 package frc492;
 
-import java.sql.Struct;
-
 import trclib.TrcEvent;
 import trclib.TrcRobot.AutoStrategy;
 import trclib.TrcStateMachine;
-import hallib.HalDashboard;
 
 public class AutoDrawbridge implements AutoStrategy {
 	
 	private static final String moduleName = "AutoDrawbridge";
 	private Robot robot;
 	private TrcEvent driveEvent;
-	private TrcEvent elevatorEvent;
 	private TrcEvent armEvent;
 	private TrcStateMachine sm;
 	
@@ -30,7 +26,6 @@ public class AutoDrawbridge implements AutoStrategy {
 	{
 		this.robot = robot;
 	    driveEvent = new TrcEvent(moduleName + ".drive");
-	    elevatorEvent = new TrcEvent(moduleName + ".elevator");
 	    armEvent = new TrcEvent(moduleName + ".arm");
 	    sm = new TrcStateMachine(moduleName);
 	    sm.start(AutonomousState.MOVING_CLOSE_TO_DRAWBRIDGE_AT_HIGH_SPEED_WHILE_RAISING_ELEVATOR_AND_ROTATING_ARMS);
@@ -40,7 +35,6 @@ public class AutoDrawbridge implements AutoStrategy {
 	private static final double MEDIUM_SPEED_MOVING_POWER = 0.5;
 	private static final double DISTANCE_TO_DRAWBRIDGE = 96.0;
 	private static final double ARM_CLOSED_DRAWBRIDGE_POSITION = 30.0;
-	private static final double ELEVATOR_OPEN_DRAWBRIDGE_POSITION = 10.0;
 	private static final double ARM_OPEN_DRAWBRIDGE_POSITION = 5.0;
 	private static final double ARM_MID_POSITION = 20.0;
 	
@@ -57,7 +51,6 @@ public class AutoDrawbridge implements AutoStrategy {
 			robot.encoderYPidCtrl.setOutputRange(-HIGH_SPEED_MOVING_POWER, HIGH_SPEED_MOVING_POWER);
 			robot.pidDrive.setTarget(0.0, DISTANCE_TO_DRAWBRIDGE * (5/6), 0, false, driveEvent, 2.0);
 			sm.addEvent(driveEvent);
-			robot.elevator.setHeight(RobotInfo.ELEVATOR_MAX_HEIGHT, elevatorEvent, 0.0);
 //			sm.addEvent(elevatorEvent);
 			robot.arm.setPosition(RobotInfo.ARM_UP_POSITION, armEvent, 0.0);
 //			sm.addEvent(armEvent);
@@ -81,7 +74,6 @@ public class AutoDrawbridge implements AutoStrategy {
 			robot.encoderYPidCtrl.setOutputRange(-0.2, 0.2);
 			robot.pidDrive.setTarget(0.0, -24.0, 0.0, false, driveEvent,  3.0);
 			sm.addEvent(driveEvent);
-			robot.elevator.setHeight(ELEVATOR_OPEN_DRAWBRIDGE_POSITION, elevatorEvent, 0.0);
 //			sm.addEvent(elevatorEvent);
 			robot.arm.setPosition(ARM_OPEN_DRAWBRIDGE_POSITION, armEvent, 0.0);
 //			sm.addEvent(armEvent);

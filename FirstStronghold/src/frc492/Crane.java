@@ -1,215 +1,179 @@
 package frc492;
 
+import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcCANTalon;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
-import trclib.TrcPidController.PidInput;
 
 public class Crane implements TrcPidController.PidInput
 {		
-	// Crane Motor PID
-	private static final double CRANE_KP = 0.0;
-	private static final double CRANE_KI = 0.0;
-	private static final double CRANE_KD = 0.0;
-	private static final double CRANE_KF = 0.0;
-	private static final double CRANE_TOLERANCE = 0.0;
-	private static final double CRANE_SETTLING = 0.0;
-	
-	// Crane Tilt Motor PID
-	private static final double CRANE_TILT_KP = 0.0;
-	private static final double CRANE_TILT_KI = 0.0;
-	private static final double CRANE_TILT_KD = 0.0;
-	private static final double CRANE_TILT_KF = 0.0;
-	private static final double CRANE_TILT_TOLERANCE = 0.0;
-	private static final double CRANE_TILE_SETTLING = 0.0;
-	
-	// Others 
-	private static final double CRANE_INCHES_PER_CLICK = 0.0;
-	private static final double CRANE_TILT_INCHES_PER_CLICK = 0.0;
-	private static final double CRANE_MAX_HEIGHT = 0.0;
-	private static final double CRANE_MIN_HEIGHT = 0.0;	
-	private static final double CRANE_TILT_MAX_ANGLE = 0.0;
-	private static final double CRANE_TILT_MIN_ANGLE = 0.0;
-	private static final double CRANE_CAL_POWER = -0.3;
-	private static final double TILT_CAL_POWER = -0.3;
-	
 	private static final String moduleName = "Crane";
+
+
+    private FrcCANTalon winchMotor;
     private FrcCANTalon craneMotor;
-    private FrcCANTalon tiltMotor;
     private TrcPidController cranePidCtrl;
-    private TrcPidController tiltPidCtrl;
     private TrcPidMotor cranePidMotor;
-    private TrcPidMotor tiltPidMotor;
-    private boolean craneOverride;
-    private boolean tiltOverride;
+
+    private FrcCANTalon tilterMotor;
+    private TrcPidController tilterPidCtrl;
+    private TrcPidMotor tilterPidMotor;
     
-    /*
-     * Constructor
+    /**
+     * Constructor: Create an instance of the object.
      */
     public Crane()
     {
-    	craneMotor = new FrcCANTalon(RobotInfo.CANID_CRANE);
-    	tiltMotor = new FrcCANTalon(RobotInfo.CANID_CRANE_TILTER);
-    	craneMotor.setInverted(true);
-        tiltMotor.setInverted(true);
-        craneMotor.reverseSensor(true);
-        tiltMotor.reverseSensor(true);
-        
+        //
+        // Winch has a motor and an encoder but no limit switches.
+        // The encoder is used to synchronize with the crane motor.
+        //
+        winchMotor = new FrcCANTalon(RobotInfo.CANID_WINCH);
+        winchMotor.setInverted(true);
+        winchMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
+        winchMotor.reverseSensor(true);
+
+        //
+        // Crane has a motor, an encoder, lower and upper limit switches.
+        // It can do full PID control.
+        //
+        craneMotor = new FrcCANTalon(RobotInfo.CANID_CRANE);
+        craneMotor.setInverted(false);
+        craneMotor.ConfigRevLimitSwitchNormallyOpen(true);
+        craneMotor.ConfigFwdLimitSwitchNormallyOpen(true);
+        craneMotor.setLimitSwitchesSwapped(false);
+        craneMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
+        craneMotor.reverseSensor(false);
         cranePidCtrl = new TrcPidController(
                 moduleName,
-                CRANE_KP,
-                CRANE_KI,
-                CRANE_KD,
-                CRANE_KF,
-                CRANE_TOLERANCE,
-                CRANE_SETTLING,
+                RobotInfo.CRANE_KP,
+                RobotInfo.CRANE_KI,
+                RobotInfo.CRANE_KD,
+                RobotInfo.CRANE_KF,
+                RobotInfo.CRANE_TOLERANCE,
+                RobotInfo.CRANE_SETTLING,
                 this);
-        
-        tiltPidCtrl = new TrcPidController(
-                moduleName,
-                CRANE_TILT_KP,
-                CRANE_TILT_KI,
-                CRANE_TILT_KD,
-                CRANE_TILT_KF,
-                CRANE_TILT_TOLERANCE,
-                CRANE_TILE_SETTLING,
-                this);
-        
         cranePidCtrl.setAbsoluteSetPoint(true);
-        tiltPidCtrl.setAbsoluteSetPoint(true);
-        
-        craneMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        tiltMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        tiltMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        
         cranePidMotor = new TrcPidMotor(
+                moduleName + ".crane",
+                craneMotor, winchMotor,
+                RobotInfo.CRANE_SYNC_GAIN, cranePidCtrl);
+        //??? What to do about the encoder scale difference between crane and winch motors???
+        cranePidMotor.setPositionScale(RobotInfo.CRANE_COUNTS_PER_INCH);
+
+        //
+        // Tilter has a motor, an encoder and a lower limit switch.
+        // It can do full PID control.
+        //
+        tilterMotor = new FrcCANTalon(RobotInfo.CANID_TILTER);
+        tilterMotor.setInverted(false);
+        tilterMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        tilterMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
+        tilterMotor.reverseSensor(false);
+        tilterPidCtrl = new TrcPidController(
                 moduleName,
-                craneMotor,
-                cranePidCtrl);
-        
-        tiltPidMotor = new TrcPidMotor(
-                moduleName,
-                tiltMotor,
-                tiltPidCtrl);
-        
-        cranePidMotor.setPositionScale(CRANE_INCHES_PER_CLICK);
-        tiltPidMotor.setPositionScale(CRANE_TILT_INCHES_PER_CLICK);
+                RobotInfo.TILTER_KP,
+                RobotInfo.TILTER_KI,
+                RobotInfo.TILTER_KD,
+                RobotInfo.TILTER_KF,
+                RobotInfo.TILTER_TOLERANCE,
+                RobotInfo.TILTER_SETTLING,
+                this);
+        tilterPidCtrl.setAbsoluteSetPoint(true);
+        tilterPidMotor = new TrcPidMotor(
+                moduleName + ".tilter", tilterMotor, tilterPidCtrl);
+        tilterPidMotor.setPositionScale(RobotInfo.TILTER_COUNTS_PER_DEGREE);
     }
     
     public void displayDebugInfo(int lineNum)
     {
         cranePidCtrl.displayPidInfo(lineNum);
-        tiltPidCtrl.displayPidInfo(lineNum + 2);
+        tilterPidCtrl.displayPidInfo(lineNum + 2);
     }
-    
-    
-    /*
-     * Overriding
-     */
-    public void setCraneOverride(boolean enabled)
-    {
-    	craneOverride = enabled;
-    }
-    
-    public void setTiltOverride(boolean enabled)
-    {
-    	tiltOverride = enabled;
-    }
-    
-    
+
     /*
      * Zero Calibration
      */
-    public void zeroCraneCalibrate()
+    public void zeroCalibarateCrane()
     {
-        cranePidMotor.zeroCalibrate(CRANE_CAL_POWER);
+        cranePidMotor.zeroCalibrate(RobotInfo.CRANE_CAL_POWER);
     }
     
-    public void zeroTiltCalibrate()
+    public void zeroCalibrateTilter()
     {
-        tiltPidMotor.zeroCalibrate(TILT_CAL_POWER);
+        tilterPidMotor.zeroCalibrate(RobotInfo.TILTER_CAL_POWER);
     }
-    
     
     /*
      * Set power
      */
     public void setCranePower(double power)
     {
-    	cranePidMotor.setPower(power);
+        craneMotor.setPower(power);
+        winchMotor.setPower(power);
+//    	cranePidMotor.setPower(power);
     }
     
     public void setTiltPower(double power)
     {
-    	tiltPidMotor.setPower(power);
+    	tilterPidMotor.setPower(power);
     }
-    
-    
-    /*
-     * Reset position
-     */
-    public void resetCranePosition()
-    {
-    	craneMotor.resetPosition();
-    }
-    
-    public void resetTiltPosition()
-    {
-    	tiltMotor.resetPosition();
-    }
-    
     
     /*
      * Set height or angle
      */
-    public void setHeight(double height)
+    public void setCraneLength(double length)
     {
-        cranePidMotor.setTarget(height, true);
+        cranePidMotor.setTarget(length, true);
     }
 
-    public void setHeight(double height, TrcEvent event, double timeout)
+    public void setCraneLength(double length, TrcEvent event, double timeout)
     {
-        cranePidMotor.setTarget(height, event, timeout);
+        cranePidMotor.setTarget(length, event, timeout);
     }
     
-    public void setAngle(double angle)
+    public void setTitlerAngle(double angle)
     {
-        tiltPidMotor.setTarget(angle, true);
+        tilterPidMotor.setTarget(angle, true);
     }
 
-    public void setAngle(double angle, TrcEvent event, double timeout)
+    public void setTilterAngle(double angle, TrcEvent event, double timeout)
     {
-        tiltPidMotor.setTarget(angle, event, timeout);
+        tilterPidMotor.setTarget(angle, event, timeout);
     }
-    
     
     /*
-     * Accessors: height, angle, limit switches
+     * Accessors: Crane length, Tilter angle, limit switches
      */
-    public double getHeight()
+    public double getCraneLength()
     {
-        return (craneMotor.getPosition() * CRANE_INCHES_PER_CLICK);
+        return (craneMotor.getPosition()/RobotInfo.CRANE_COUNTS_PER_INCH);
     }
     
-    public double getAngle()
+    public double getWinchLength()
     {
-        return (tiltMotor.getPosition() * CRANE_INCHES_PER_CLICK);
+        return (winchMotor.getPosition()/RobotInfo.WINCH_COUNTS_PER_INCH);
+    }
+    
+    public double getTilterAngle()
+    {
+        return (tilterMotor.getPosition()/RobotInfo.TILTER_COUNTS_PER_DEGREE);
     }
     
     public boolean isCraneLowerLimitSwitchActive()
     {
-        return !craneMotor.isRevLimitSwitchClosed();
+        return craneMotor.isLowerLimitSwitchActive();
     }
 
-    public boolean isTiltLowerLimitSwitchActive()
+    public boolean isCraneUpperLimitSwitchActive()
     {
-        return !tiltMotor.isRevLimitSwitchClosed();
+        return craneMotor.isUpperLimitSwitchActive();
     }
-    
-    public boolean isTiltUpperLimitSwitchActive()
+
+    public boolean isTilterLowerLimitSwitchActive()
     {
-    	return !tiltMotor.isFwdLimitSwitchClosed();
+        return tilterMotor.isLowerLimitSwitchActive();
     }
     
     /*
@@ -221,39 +185,13 @@ public class Crane implements TrcPidController.PidInput
 
         if (pidCtrl == this.cranePidCtrl)
         {
-            value = getHeight();
+            value = getCraneLength();
         }
-        
-        if (pidCtrl == this.tiltPidCtrl)
+        else if (pidCtrl == this.tilterPidCtrl)
         {
-            value = getAngle();
+            value = getTilterAngle();
         }
 
         return value;
     }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+}   //class Crane

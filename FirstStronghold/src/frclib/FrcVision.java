@@ -8,11 +8,10 @@ import com.ni.vision.NIVision.*;
 
 import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.vision.AxisCamera;
 import hallib.HalDashboard;
 import trclib.TrcDbgTrace;
-import trclib.TrcDbgTrace.MsgLevel;
-import trclib.TrcDbgTrace.TraceLevel;
 
 public class FrcVision implements Runnable
 {
@@ -20,7 +19,6 @@ public class FrcVision implements Runnable
     private static final boolean debugEnabled = false;
     private static final boolean visionPerfEnabled = false;
     private TrcDbgTrace dbgTrace = null;
-    private HalDashboard dashboard = HalDashboard.getInstance();
 
     public class ParticleReport
             implements Comparator<ParticleReport>, Comparable<ParticleReport>
@@ -316,7 +314,7 @@ public class FrcVision implements Runnable
             {
                 deltaTime = Timer.getFPGATimestamp() - startTime;
                 totalTime += deltaTime;
-                dashboard.putNumber("ColorThresholdTime", deltaTime);
+                SmartDashboard.putNumber("ColorThresholdTime", deltaTime);
             }
 
             if (doConvexHull)
@@ -330,7 +328,7 @@ public class FrcVision implements Runnable
                 {
                     deltaTime = Timer.getFPGATimestamp() - startTime;
                     totalTime += deltaTime;
-                    dashboard.putNumber("ConvexHullTime", deltaTime);
+                    SmartDashboard.putNumber("ConvexHullTime", deltaTime);
                 }
             }
 

@@ -1,22 +1,12 @@
 package frc492;
 
-import com.ni.vision.NIVision;
-import com.ni.vision.NIVision.*;
-
-import edu.wpi.first.wpilibj.BuiltInAccelerometer;
 import edu.wpi.first.wpilibj.CANTalon;
-import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.SpeedController;
-import edu.wpi.first.wpilibj.Timer;
 import frclib.FrcADXRS450Gyro;
 import frclib.FrcCANTalon;
 import frclib.FrcRobotBase;
 import frclib.FrcRGBLight;
 import hallib.HalDashboard;
-import hallib.HalUtil;
-import trclib.TrcDbgTrace;
 import trclib.TrcDriveBase;
-import trclib.TrcKalmanFilter;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
 import trclib.TrcRobot.RobotMode;
@@ -31,27 +21,21 @@ import trclib.TrcRobot.RobotMode;
 public class Robot extends FrcRobotBase implements TrcPidController.PidInput
 {
     private static final String programName = "FirstStronghold";
-    private static final String moduleName = "Robot";
-    private TrcDbgTrace dbgTrace = null;
+//    private static final String moduleName = "Robot";
+//    private TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
 
     private HalDashboard dashboard = HalDashboard.getInstance();
-    private static final boolean visionTargetEnabled = false;
+//    private static final boolean visionTargetEnabled = false;
+//    private static boolean usbCameraEnabled = false;
     private static final boolean debugDriveBase = false;
     private static final boolean debugPidDrive = false;
-    private static final boolean debugPidElevator = true;
     private static final boolean debugPidSonar = false;
-    private static boolean usbCameraEnabled = false;
 
 //    public static boolean competitionRobot = true;
 
     //
     // Sensors
     //
-    private BuiltInAccelerometer accelerometer;
-    private TrcKalmanFilter accelXFilter;
-    private TrcKalmanFilter accelYFilter;
-    private TrcKalmanFilter accelZFilter;
-//    private AnalogGyro gyro;
     private FrcADXRS450Gyro gyro;
     //
     // DriveBase subsystem.
@@ -70,11 +54,12 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     //
     // Define our subsystems for Auto and TeleOp modes.
     //
-    public Elevator elevator;
     public Arm arm;
+    public Crane crane;
     public FrcCANTalon pickup;
     public FrcRGBLight rgbLight;
 
+    /*
     //
     // Vision target subsystem.
     //
@@ -99,6 +84,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                      targetLeft,
                      targetBottom - targetTop,
                      targetRight - targetLeft);
+                     */
     //
     // Robot Modes.
     //
@@ -122,11 +108,6 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     public Robot()
     {
         super(programName);
-        dbgTrace = new TrcDbgTrace(
-                moduleName,
-                false,
-                TrcDbgTrace.TraceLevel.API,
-                TrcDbgTrace.MsgLevel.INFO);
     }   //Robot
 
     /**
@@ -136,17 +117,10 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     @Override
     public void initRobot()
     {
-        final String funcName = "initRobot";
-
         //
         // Sensors.
         //
-        accelerometer = new BuiltInAccelerometer();
-        accelXFilter = new TrcKalmanFilter("accelX");
-        accelYFilter = new TrcKalmanFilter("accelY");
-        accelZFilter = new TrcKalmanFilter("accelZ");
         gyro = new FrcADXRS450Gyro();
-//        gyro = new AnalogGyro(RobotInfo.AIN_GYRO);
 
         //
         // DriveBase subsystem.
@@ -231,14 +205,14 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                 encoderXPidCtrl, sonarYPidCtrl, gyroTurnPidCtrl);
 
         //
-        // Elevator subsystem.
-        //
-        elevator = new Elevator();
-
-        //
         // Arm subsystem.
         //
         arm = new Arm();
+        
+        //
+        // Crane subsystem.
+        //
+        crane = new Crane();
         
         //
         // Pickup subsystem
@@ -261,7 +235,8 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         {
             rgbLight = null;
         }
-        
+
+        /*
         //
         // Vision subsystem.
         //
@@ -298,6 +273,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                         funcName, "Failed to open USB camera, disable it!");
             }
         }
+        */
 
         //
         // Robot Modes.
@@ -333,20 +309,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         sonarDistance = sonarFilter.filter(ultrasonic.getData());
         TrcDashboard.putNumber("Sonar Distance", sonarDistance);
         */
-        double xAccel = accelXFilter.filterData(accelerometer.getX());
-        double yAccel = accelYFilter.filterData(accelerometer.getY());
-        double zAccel = accelZFilter.filterData(accelerometer.getZ());
-        HalDashboard.putNumber("Accel-X", xAccel);
-        HalDashboard.putNumber("Accel-Y", yAccel);
-        HalDashboard.putNumber("Accel-Z", zAccel);
-        //
-        // Elevator info.
-        //
-        HalDashboard.putNumber("Elevator Height", elevator.getHeight());
-        HalDashboard.putBoolean("LeftLowerLimitSW", elevator.isLeftLowerLimitSwitchActive());
-        HalDashboard.putBoolean("LeftUpperLimitSW", elevator.isLeftUpperLimitSwitchActive());
-        HalDashboard.putBoolean("RightLowerLimitSW", elevator.isRightLowerLimitSwitchActive());
-        HalDashboard.putBoolean("RightUpperLimitSW", elevator.isRightUpperLimitSwitchActive());
+        /*
         //
         // USB camera streaming.
         //
@@ -378,6 +341,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
                     (float)0x0);
             cameraServer.setImage(usbCamImage);
         }
+        */
 
         if (debugDriveBase)
         {
@@ -403,22 +367,6 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
             encoderYPidCtrl.displayPidInfo(5);
             gyroTurnPidCtrl.displayPidInfo(7);
         }
-        else if (debugPidElevator)
-        {
-            //
-            // Elevator debug info.
-            //
-            dashboard.displayPrintf(
-                    1, "ElevatorHeight=%5.1f",
-                    elevator.getHeight());
-            dashboard.displayPrintf(
-                    2, "LeftLimit=%d/%d, RightLimit=%d/%d",
-                    elevator.isLeftLowerLimitSwitchActive()? 1: 0,
-                    elevator.isLeftUpperLimitSwitchActive()? 1: 0,
-                    elevator.isRightLowerLimitSwitchActive()? 1: 0,
-                    elevator.isRightUpperLimitSwitchActive()? 1: 0);
-            elevator.displayDebugInfo(3);
-        }
         else if (debugPidSonar)
         {
             encoderXPidCtrl.displayPidInfo(3);
@@ -426,47 +374,6 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
             gyroTurnPidCtrl.displayPidInfo(7);
         }
     }   //updateDashboard
-
-    //
-    // Implements TrcDriveBase.MotorPosition.
-    //
-    public double getMotorPosition(SpeedController speedController)
-    {
-        return ((CANTalon)speedController).getPosition();
-    }   //getMotorPosition
-
-    public double getMotorSpeed(SpeedController speedController)
-    {
-        return ((CANTalon)speedController).getSpeed()*10.0;
-    }   //getMotorSpeed
-
-    public void resetMotorPosition(SpeedController speedController)
-    {
-        ((CANTalon)speedController).setPosition(0.0);
-    }   //resetMotorPosition
-
-    public void reversePositionSensor(
-            SpeedController speedController,
-            boolean flip)
-    {
-        ((CANTalon)speedController).reverseSensor(flip);
-    }   //reversePositionSensor
-
-    public boolean isForwardLimitSwitchActive(SpeedController speedController)
-    {
-        //
-        // There is no limit switches on the DriveBase.
-        //
-        return false;
-    }   //isForwardLimitSwitchActive
-
-    public boolean isReverseLimitSwitchActive(SpeedController speedController)
-    {
-        //
-        // There is no limit switches on the DriveBase.
-        //
-        return false;
-    }   //isReverseLimitSwitchActive
 
     //
     // Implements TrcPidController.PidInput.

@@ -29,7 +29,7 @@ import hallib.HalUtil;
 public class TrcPidController
 {
     private static final String moduleName = "TrcPidController";
-    private static final boolean debugEnabled = true;
+    private static final boolean debugEnabled = false;
     private TrcDbgTrace dbgTrace = null;
 
     public interface PidInput

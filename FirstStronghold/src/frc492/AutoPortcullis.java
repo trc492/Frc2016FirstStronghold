@@ -1,7 +1,5 @@
 package frc492;
 
-//import frclibj.TrcDashboard;
-import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcRobot.AutoStrategy;
 import trclib.TrcStateMachine;
@@ -25,10 +23,8 @@ public class AutoPortcullis implements AutoStrategy
 	
 	// variables
 	private static final String moduleName = "AutoPortcullis";
-	//private HalDashboard dashboard = HalDashboard.getInstance();
 	private Robot robot;
 	private TrcEvent driveEvent;
-	private TrcEvent elevatorEvent;
 	private TrcEvent armEvent;
 	private TrcStateMachine sm;
 	
@@ -40,6 +36,7 @@ public class AutoPortcullis implements AutoStrategy
 		STATE_DRIVE_TO_PORT,
 		STATE_LIFT_GATE,
 		STATE_DRIVE_UNDER_PORT,
+		STATE_DRIVE_PAST,
 		STATE_DONE
 	}
 	
@@ -48,7 +45,6 @@ public class AutoPortcullis implements AutoStrategy
 	{
 		this.robot = robot;
 		driveEvent = new TrcEvent(moduleName + ".driveEvent");
-        elevatorEvent = new TrcEvent(moduleName + ".elevatorEvent");
         armEvent = new TrcEvent(moduleName + ".armEvent");
         sm = new TrcStateMachine(moduleName + ".sm");
         sm.start(State.START);
@@ -56,11 +52,6 @@ public class AutoPortcullis implements AutoStrategy
 	
 	public void autoPeriodic(double elapsedTime)
 	{
-        /*TrcDashboard.textPrintf(1, "%s[%d] = %s",
-                moduleName,
-                sm.getState(),
-                ready? "Ready": "NotReady");*/
-
         if (sm.isReady())
         {
             State state = (State) sm.getState();
@@ -68,67 +59,66 @@ public class AutoPortcullis implements AutoStrategy
             {
             case STATE_DRIVE_TO_DEFENSE:
                 //
-                // drive up to the defense
+                // drive up to the defense full speed, lower arms
                 //
-                robot.encoderYPidCtrl.setOutputRange(-1, 1);
             	robot.pidDrive.setTarget(0.0, DISTANCE_TO_DEFENSE, 0.0, false, driveEvent, 2.0);
-            	
-            	//
-            	// lower elevator
-            	//
-                robot.elevator.setHeight(RobotInfo.ELEVATOR_MIN_HEIGHT);
                 robot.arm.setPosition(ARM_PORT_LOW);
                
                 sm.addEvent(driveEvent);
-                sm.waitForEvents(State.STATE_DRIVE_TO_PORT, 0.0, true);
+                sm.waitForEvents(State.STATE_DRIVE_TO_PORT);
                 break;
 
             case STATE_DRIVE_TO_PORT:
                 //
-                // drive to the portcullius
+                // drive to the portcullius at 30% speed
                 //
                 robot.encoderYPidCtrl.setOutputRange(-.3, .3);
             	robot.pidDrive.setTarget(0.0, DISTANCE_TO_PORT, 0.0, false, driveEvent, 2.0);
             	
                 sm.addEvent(driveEvent);
-                sm.waitForEvents(State.STATE_LIFT_GATE, 0.0, true);
+                sm.waitForEvents(State.STATE_LIFT_GATE);
                 break;
                 
             case STATE_LIFT_GATE:
             	//
             	// lift the gate
             	//
-            	robot.elevator.setHeight(RobotInfo.ELEVATOR_MAX_HEIGHT, elevatorEvent, 1.0);
             	robot.arm.setPosition(ARM_PORT_UP, armEvent, 1.0);
             	
-            	sm.addEvent(elevatorEvent);
                 sm.addEvent(armEvent);
-            	sm.waitForEvents(State.STATE_DRIVE_UNDER_PORT, 0.0, true);
+            	sm.waitForEvents(State.STATE_DRIVE_UNDER_PORT);
                 break;
             
             case STATE_DRIVE_UNDER_PORT:
             	//
-            	// lift the gate
+            	// drive slowly under the port at 50% power
             	//
                 robot.encoderYPidCtrl.setOutputRange(-.5, .5);
                 robot.pidDrive.setTarget(0.0, DISTANCE_UNDER_PORT, 0, false, driveEvent, 2.0);
             	//robot.arm.setPosition(position);
                 
             	sm.addEvent(driveEvent);
-            	sm.waitForEvents(State.STATE_DONE, 0.0, true);
+            	sm.waitForEvents(State.STATE_DRIVE_PAST);
                 break;
             	
+            case STATE_DRIVE_PAST:
+                robot.encoderYPidCtrl.setOutputRange(-1.0, 1.0);
+                robot.pidDrive.setTarget(0.0, DISTANCE_PAST_PORT, 0.0, false, driveEvent, 2.0);
+                robot.arm.setPosition(ARM_TO_NEUTRAL);
+                
+                sm.addEvent(driveEvent);
+                sm.waitForEvents(State.STATE_DONE);
+                break;
+            
 
             case STATE_DONE:
             default:
                 //
-                // stop (in the name of love)
+                // stop 
                 //
-            	robot.pidDrive.setTarget(0.0, DISTANCE_PAST_PORT, 0, false, driveEvent, 2.0);
-                robot.arm.setPosition(ARM_TO_NEUTRAL);
-                robot.elevator.setHeight(ELEVATOR_TO_NEUTRAL);
                 
                 sm.stop();
+                break;
             }
         }
     }   //autoPeriodic
