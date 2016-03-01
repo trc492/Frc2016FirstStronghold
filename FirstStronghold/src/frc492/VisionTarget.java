@@ -283,7 +283,7 @@ public class VisionTarget
     {
         return null;
     }   //getLastTargetRect
-    
+
     /**
      * Converts a ratio with ideal value of 1 to a score. The resulting
      * function is piecewise linear going from (0,0) to (1,100) to (2,0)
