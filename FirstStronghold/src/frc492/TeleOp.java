@@ -46,6 +46,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     private TrcBooleanState ringLightPowerToggle = new TrcBooleanState("RingLightPower", false);
     private TrcBooleanState ledFlashingToggle = new TrcBooleanState("LEDFlashing", false);
     private boolean slowDriveOverride = false;
+    private boolean syncArmEnabled = true;
     private int colorIndex = 0;
     private DriveMode driveMode = DriveMode.MECANUM_MODE;
     private OperatorStickMode operatorStickMode = OperatorStickMode.ARM_MODE;
@@ -157,7 +158,8 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         double power = operatorStick.getYWithDeadband(true);
         if (operatorStickMode == OperatorStickMode.ARM_MODE)
         {
-            robot.arm.setPower(power);
+//            robot.arm.setPower(power, syncArmEnabled);
+            robot.arm.setPower(power, false);
         }
         else
         {
@@ -284,7 +286,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             switch (button)
             {
                 case FrcJoystick.LOGITECH_TRIGGER:
-                    robot.arm.setManualOverride(true);
+                    syncArmEnabled = !pressed;
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON2:

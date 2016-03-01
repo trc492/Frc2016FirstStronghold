@@ -20,7 +20,6 @@ public class Arm implements TrcPidController.PidInput
     private FrcCANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
-    private boolean manualOverride = false;
 
     public Arm()
     {
@@ -68,11 +67,6 @@ public class Arm implements TrcPidController.PidInput
 //        pidCtrl.displayPidInfo(lineNum);
     }
 
-    public void setManualOverride(boolean override)
-    {
-        manualOverride = override;
-    }
-
     public void setPosition(double position)
     {
         pidMotor.setTarget(position, true);
@@ -93,7 +87,7 @@ public class Arm implements TrcPidController.PidInput
         pidMotor.zeroCalibrate(RobotInfo.ARM_CAL_POWER);
     }
 
-    public void setPower(double power)
+    public void setPower(double power, boolean syncEnabled)
     {
         if (debugEnabled)
         {
@@ -108,7 +102,7 @@ public class Arm implements TrcPidController.PidInput
         // limit switch and encoder. So if any of these are malfunctioning, we need a way
         // to still control the arm in a reasonable fashion.
         //
-        pidMotor.setPower(power, !manualOverride);
+        pidMotor.setPower(power, syncEnabled);
     }
 
     //
