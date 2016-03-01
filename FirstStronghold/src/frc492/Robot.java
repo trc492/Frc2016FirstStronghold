@@ -1,11 +1,22 @@
 package frc492;
 
+import com.ni.vision.NIVision;
+import com.ni.vision.NIVision.DrawMode;
+import com.ni.vision.NIVision.IMAQdxCameraControlMode;
+import com.ni.vision.NIVision.Image;
+import com.ni.vision.NIVision.ImageType;
+import com.ni.vision.NIVision.ShapeMode;
+
 import edu.wpi.first.wpilibj.CANTalon;
+import edu.wpi.first.wpilibj.CameraServer;
 import frclib.FrcADXRS450Gyro;
 import frclib.FrcCANTalon;
 import frclib.FrcRobotBase;
 import frclib.FrcRGBLight;
+import frclib.FrcVision;
 import hallib.HalDashboard;
+import hallib.HalUtil;
+import trclib.TrcDbgTrace;
 import trclib.TrcDriveBase;
 import trclib.TrcPidController;
 import trclib.TrcPidDrive;
@@ -18,25 +29,42 @@ import trclib.TrcRobot.RobotMode;
  * creating this project, you must also update the manifest file in the
  * resource directory.
  */
-public class Robot extends FrcRobotBase implements TrcPidController.PidInput
+public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
+                                                   FrcVision.ImageProvider
 {
     private static final String programName = "FirstStronghold";
-//    private static final String moduleName = "Robot";
-//    private TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
+    private static final String moduleName = "Robot";
+    private TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
 
-    private HalDashboard dashboard = HalDashboard.getInstance();
-//    private static final boolean visionTargetEnabled = false;
-//    private static boolean usbCameraEnabled = false;
-    private static final boolean debugDriveBase = false;
+    private static final boolean usbCameraEnabled = true;
+    private static final boolean visionTargetEnabled = true;
+    private static final boolean debugDriveBase = true;
+    private static final boolean debugArm = true;
+    private static final boolean debugCrane = true;
     private static final boolean debugPidDrive = false;
     private static final boolean debugPidSonar = false;
+    private static final double DASHBOARD_UPDATE_INTERVAL = 0.1;
 
-//    public static boolean competitionRobot = true;
+    private HalDashboard dashboard = HalDashboard.getInstance();
+    private double nextUpdateTime = HalUtil.getCurrentTime();
 
     //
-    // Sensors
+    // Sensors.
     //
     private FrcADXRS450Gyro gyro;
+//    private TrcAnalogInput sonar;
+//    private TrcKalmanFilter sonarFilter;
+
+    //
+    // Camera.
+    //
+    private CameraServer cameraServer = null;
+    private int usbCamSession = -1;
+    private Image usbCamImage = null;
+    private Image displayImage = null;
+    private boolean freshImage = false;
+    private boolean videoEnabled = false;
+
     //
     // DriveBase subsystem.
     //
@@ -45,12 +73,15 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     public FrcCANTalon rightFrontMotor;
     public FrcCANTalon rightRearMotor;
     public TrcDriveBase driveBase;
+
     public TrcPidController encoderXPidCtrl;
     public TrcPidController encoderYPidCtrl;
     public TrcPidController gyroTurnPidCtrl;
     public TrcPidDrive pidDrive;
+
     public TrcPidController sonarYPidCtrl;
     public TrcPidDrive sonarPidDrive;
+
     //
     // Define our subsystems for Auto and TeleOp modes.
     //
@@ -59,18 +90,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     public FrcCANTalon pickup;
     public FrcRGBLight rgbLight;
 
-    /*
     //
     // Vision target subsystem.
     //
     public VisionTarget visionTarget = null;
-    //
-    // Camera subsystem.
-    //
-    private CameraServer cameraServer = null;
-    private int usbCamSession = -1;
-    private Image usbCamImage = null;
-    private double nextCaptureTime = HalUtil.getCurrentTime();
+    /*
     private static final String targetLeftKey = "Target Left";
     private static final String targetRightKey = "Target Right";
     private static final String targetTopKey = "Target Top";
@@ -91,12 +115,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     private RobotMode teleOpMode;
     private RobotMode autoMode;
     private RobotMode testMode;
+
     //
     // Ultrasonic subsystem (has a dependency on teleOpMode).
     //
     /*
-    public TrcAnalogInput ultrasonic;
-    private TrcKalmanFilter sonarFilter;
     public double sonarDistance;
     private static final String wallDistanceKey = "Wall Distance";
     public double wallDistance = 26.0;
@@ -117,10 +140,48 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
     @Override
     public void initRobot()
     {
+        final String funcName = "initRobot";
+
         //
         // Sensors.
         //
         gyro = new FrcADXRS450Gyro();
+        /*
+        sonar = new TrcAnalogInput(
+                        "frontSonar",
+                        RobotInfo.AIN_ULTRASONIC,
+                        RobotInfo.ULTRASONIC_INCHESPERVOLT,
+                        wallDistance - 1.0,
+                        wallDistance + 1.0,
+                        0,
+                        (TrcAnalogInput.AnalogEventHandler)teleOpMode);
+        sonarFilter = new TrcKalmanFilter();
+        */
+
+        //
+        // Camera for streaming.
+        //
+        if (usbCameraEnabled)
+        {
+            try
+            {
+                usbCamSession = NIVision.IMAQdxOpenCamera(
+                        RobotInfo.USB_CAM_NAME,
+                        IMAQdxCameraControlMode.CameraControlModeController);
+                NIVision.IMAQdxConfigureGrab(usbCamSession);
+
+                usbCamImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
+                displayImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
+                cameraServer = CameraServer.getInstance();
+                cameraServer.setQuality(30);
+            }
+            catch (Exception e)
+            {
+                cameraServer = null;
+                dbgTrace.traceWarn(
+                        funcName, "Failed to open USB camera, disable it!");
+            }
+        }
 
         //
         // DriveBase subsystem.
@@ -129,18 +190,20 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         leftRearMotor = new FrcCANTalon(RobotInfo.CANID_LEFTREARMOTOR);
         rightFrontMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTFRONTMOTOR);
         rightRearMotor = new FrcCANTalon(RobotInfo.CANID_RIGHTREARMOTOR);
+
+        //
+        // Initialize each drive motor controller.
+        //
         leftFrontMotor.setInverted(false);
         leftRearMotor.setInverted(false);
         rightFrontMotor.setInverted(true);
         rightRearMotor.setInverted(true);
+
         leftFrontMotor.setPositionSensorInverted(true);
         leftRearMotor.setPositionSensorInverted(true);
         rightFrontMotor.setPositionSensorInverted(false);
         rightRearMotor.setPositionSensorInverted(false);
 
-        //
-        // Initialize each drive motor controller.
-        //
         leftFrontMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
         leftRearMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
         rightFrontMotor.setFeedbackDevice(CANTalon.FeedbackDevice.QuadEncoder);
@@ -208,17 +271,17 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         // Arm subsystem.
         //
         arm = new Arm();
-        
+
         //
         // Crane subsystem.
         //
         crane = new Crane();
-        
+
         //
         // Pickup subsystem
         //
         pickup = new FrcCANTalon(RobotInfo.CANID_PICKUP);
-        
+
         //
         // RGB LED light
         //
@@ -236,44 +299,17 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
             rgbLight = null;
         }
 
-        /*
         //
         // Vision subsystem.
         //
-        if (visionTargetEnabled)
+        if (visionTargetEnabled && cameraServer != null)
         {
-            visionTarget = new VisionTarget();
+            visionTarget = new VisionTarget(this);
         }
         else
         {
             visionTarget = null;
         }
-        
-        //
-        // Camera subsystem for streaming.
-        //
-        if (usbCameraEnabled)
-        {
-            try
-            {
-                usbCamSession = NIVision.IMAQdxOpenCamera(
-                        RobotInfo.USB_CAM_NAME,
-                        IMAQdxCameraControlMode.CameraControlModeController);
-                NIVision.IMAQdxConfigureGrab(usbCamSession);
-                NIVision.IMAQdxStartAcquisition(usbCamSession);
-
-                usbCamImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
-                cameraServer = CameraServer.getInstance();
-                cameraServer.setQuality(30);
-            }
-            catch (Exception e)
-            {
-                usbCameraEnabled = false;
-                dbgTrace.traceWarn(
-                        funcName, "Failed to open USB camera, disable it!");
-            }
-        }
-        */
 
         //
         // Robot Modes.
@@ -282,102 +318,110 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
         autoMode = new Autonomous(this);
         testMode = new Test(this);
         setupRobotModes(teleOpMode, autoMode, testMode, null);
-
-        /*
-        ultrasonic =
-                new TrcAnalogInput(
-                        "frontSonar",
-                        RobotInfo.AIN_ULTRASONIC,
-                        RobotInfo.ULTRASONIC_INCHESPERVOLT,
-                        wallDistance - 1.0,
-                        wallDistance + 1.0,
-                        0,
-                        (TrcAnalogInput.AnalogEventHandler)teleOpMode);
-        sonarFilter = new TrcKalmanFilter();
-
-        dispenserDistance =
-                TrcDashboard.getNumber(dispenserDistanceKey, dispenserDistance);
-                */
     }   //initRobot
+
+    public void setVideoEnabled(boolean enabled)
+    {
+        if (cameraServer != null)
+        {
+            if (enabled)
+            {
+                NIVision.IMAQdxStartAcquisition(usbCamSession);
+            }
+            else
+            {
+                NIVision.IMAQdxStopAcquisition(usbCamSession);
+            }
+            videoEnabled = enabled;
+        }
+    }   //setVideoEnabled
 
     public void updateDashboard()
     {
-        //
-        // Sensor info.
-        //
-        /*
-        sonarDistance = sonarFilter.filter(ultrasonic.getData());
-        TrcDashboard.putNumber("Sonar Distance", sonarDistance);
-        */
-        /*
-        //
-        // USB camera streaming.
-        //
-        if (usbCameraEnabled && Timer.getFPGATimestamp() >= nextCaptureTime)
-        {
-            //
-            // Capture at 10fps.
-            //
-            nextCaptureTime = Timer.getFPGATimestamp() + 0.1;
-            NIVision.IMAQdxGrab(usbCamSession, usbCamImage, 1);
-            targetLeft = (int)
-                    HalDashboard.getNumber(targetLeftKey, targetLeft);
-            targetRight = (int)
-                    HalDashboard.getNumber(targetRightKey, targetRight);
-            targetTop = (int)
-                    HalDashboard.getNumber(targetTopKey, targetTop);
-            targetBottom = (int)
-                    HalDashboard.getNumber(targetBottomKey, targetBottom);
-            targetRect.left = targetLeft;
-            targetRect.top = targetTop;
-            targetRect.width = targetRight - targetLeft;
-            targetRect.height = targetBottom - targetTop;
-            NIVision.imaqDrawShapeOnImage(
-                    usbCamImage,
-                    usbCamImage,
-                    targetRect,
-                    DrawMode.DRAW_VALUE,
-                    ShapeMode.SHAPE_RECT,
-                    (float)0x0);
-            cameraServer.setImage(usbCamImage);
-        }
-        */
+        double currTime = HalUtil.getCurrentTime();
 
-        if (debugDriveBase)
+        if (currTime >= nextUpdateTime)
         {
+            nextUpdateTime = currTime + DASHBOARD_UPDATE_INTERVAL;
+
             //
-            // DriveBase debug info.
+            // Sensor info.
             //
-            dashboard.displayPrintf(
-                    1, "LFEnc=%8.0f, RFEnc=%8.0f",
-                    leftFrontMotor.getPosition(),
-                    rightFrontMotor.getPosition());
-            dashboard.displayPrintf(
-                    2, "LREnc=%8.0f, RREnc=%8.0f",
-                    leftRearMotor.getPosition(),
-                    rightRearMotor.getPosition());
-            dashboard.displayPrintf(
-                    3, "YPos=%6.1f, Heading=%6.1f",
-                    driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE,
-                    driveBase.getHeading());
-        }
-        else if (debugPidDrive)
-        {
-            encoderXPidCtrl.displayPidInfo(3);
-            encoderYPidCtrl.displayPidInfo(5);
-            gyroTurnPidCtrl.displayPidInfo(7);
-        }
-        else if (debugPidSonar)
-        {
-            encoderXPidCtrl.displayPidInfo(3);
-            sonarYPidCtrl.displayPidInfo(5);
-            gyroTurnPidCtrl.displayPidInfo(7);
+            /*
+            sonarDistance = sonarFilter.filter(ultrasonic.getData());
+            TrcDashboard.putNumber("Sonar Distance", sonarDistance);
+            */
+
+            //
+            // USB camera streaming.
+            //
+            if (videoEnabled)
+            {
+                NIVision.IMAQdxGrab(usbCamSession, usbCamImage, 1);
+                freshImage = true;
+                NIVision.Rect rect = visionTarget != null? visionTarget.getLastTargetRect(): null;
+                if (rect != null)
+                {
+                    NIVision.imaqDrawShapeOnImage(
+                            usbCamImage,
+                            displayImage,
+                            rect,
+                            DrawMode.DRAW_VALUE,
+                            ShapeMode.SHAPE_RECT,
+                            (float)0x0);
+                    cameraServer.setImage(displayImage);
+                }
+                else
+                {
+                    cameraServer.setImage(usbCamImage);
+                }
+            }
+
+            if (debugDriveBase)
+            {
+                //
+                // DriveBase debug info.
+                //
+                dashboard.displayPrintf(
+                        1, "DriveBase: lf=%.0f, rf=%.0f, lr=%.0f, rr=%.0f",
+                        leftFrontMotor.getPosition(), rightFrontMotor.getPosition(),
+                        leftRearMotor.getPosition(), rightRearMotor.getPosition());
+                dashboard.displayPrintf(
+                        2, "DriveBase: X=%.1f, Y=%.1f, Heading=%.1f",
+                        driveBase.getXPosition()*RobotInfo.DRIVEBASE_X_SCALE,
+                        driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE,
+                        driveBase.getHeading());
+            }
+
+            if (debugArm)
+            {
+                arm.displayDebugInfo(3);
+            }
+
+            if (debugCrane)
+            {
+                crane.displayDebugInfo(4);
+            }
+
+            if (debugPidDrive)
+            {
+                encoderXPidCtrl.displayPidInfo(7);
+                encoderYPidCtrl.displayPidInfo(9);
+                gyroTurnPidCtrl.displayPidInfo(11);
+            }
+            else if (debugPidSonar)
+            {
+                encoderXPidCtrl.displayPidInfo(7);
+                sonarYPidCtrl.displayPidInfo(9);
+                gyroTurnPidCtrl.displayPidInfo(11);
+            }
         }
     }   //updateDashboard
 
     //
     // Implements TrcPidController.PidInput.
     //
+    @Override
     public double getInput(TrcPidController pidCtrl)
     {
         double value = 0.0;
@@ -403,5 +447,23 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput
 
         return value;
     }   //getInput
+
+    //
+    // Implements FrcVision.ImageProvider.
+    //
+    @Override
+    public boolean getImage(Image image)
+    {
+        boolean isFresh = false;
+
+        if (freshImage)
+        {
+            NIVision.imaqDuplicate(image, usbCamImage);
+            freshImage = false;
+            isFresh = true;
+        }
+
+        return isFresh;
+    }   //getImage
 
 }   //class Robot

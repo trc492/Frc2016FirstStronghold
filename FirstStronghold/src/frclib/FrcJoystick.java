@@ -97,10 +97,7 @@ public class FrcJoystick extends Joystick implements TrcTaskMgr.Task
 
     public interface ButtonHandler
     {
-        public void joystickButtonEvent(
-                FrcJoystick joystick,
-                final int btnMask,
-                final boolean pressed);
+        public void joystickButtonEvent(FrcJoystick joystick, int button, boolean pressed);
     }   //interface ButonHandler
 
     private int port;

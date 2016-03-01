@@ -2,6 +2,9 @@ package frc492;
 
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcCANTalon;
+import frclib.FrcRobotBase;
+import hallib.HalDashboard;
+import trclib.TrcDbgTrace;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
@@ -9,21 +12,28 @@ import trclib.TrcPidMotor;
 public class Arm implements TrcPidController.PidInput
 {
     private static final String moduleName = "Arm";
+    private static final boolean debugEnabled = false;
+    private TrcDbgTrace dbgTrace = debugEnabled? FrcRobotBase.getRobotTracer(): null;
+
+    private HalDashboard dashboard = HalDashboard.getInstance();
     private FrcCANTalon leftMotor;
     private FrcCANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
+    private boolean manualOverride = false;
 
     public Arm()
     {
         leftMotor = new FrcCANTalon(RobotInfo.CANID_LEFT_ARM);
         rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ARM);
-        leftMotor.setInverted(true);
-        rightMotor.setInverted(true);
+        leftMotor.setInverted(false);
+        rightMotor.setInverted(false);
+        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
         leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        leftMotor.setLimitSwitchesSwapped(true);
-        rightMotor.setLimitSwitchesSwapped(true);
+        leftMotor.setLimitSwitchesSwapped(false);
+        rightMotor.setLimitSwitchesSwapped(false);
         leftMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
         rightMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
 
@@ -43,12 +53,24 @@ public class Arm implements TrcPidController.PidInput
                 leftMotor, rightMotor,
                 RobotInfo.ARM_SYNC_GAIN,
                 pidCtrl); 
-        pidMotor.setPositionScale(RobotInfo.ARM_COUNTS_PER_DEGREE);
+        pidMotor.setPositionScale(RobotInfo.ARM_DEGREES_PER_COUNT);
     }
 
     public void displayDebugInfo(int lineNum)
     {
-        pidCtrl.displayPidInfo(lineNum);
+        dashboard.displayPrintf(
+                lineNum, "Arm: lPos=%.2f, rPos=%.2f, lSW=%d/%d, rSW=%d/%d",
+                leftMotor.getPosition(), rightMotor.getPosition(),
+                leftMotor.isLowerLimitSwitchActive()? 1: 0,
+                leftMotor.isUpperLimitSwitchActive()? 1: 0,
+                rightMotor.isLowerLimitSwitchActive()? 1: 0,
+                rightMotor.isUpperLimitSwitchActive()? 1: 0);
+//        pidCtrl.displayPidInfo(lineNum);
+    }
+
+    public void setManualOverride(boolean override)
+    {
+        manualOverride = override;
     }
 
     public void setPosition(double position)
@@ -63,9 +85,7 @@ public class Arm implements TrcPidController.PidInput
 
     public double getPosition()
     {
-        double leftPos = leftMotor.getPosition();
-        double rightPos = rightMotor.getPosition();
-        return (leftPos + rightPos)/RobotInfo.ARM_COUNTS_PER_DEGREE/2.0;
+        return pidMotor.getPosition();
     }
 
     public void zeroCalibrate()
@@ -75,15 +95,20 @@ public class Arm implements TrcPidController.PidInput
 
     public void setPower(double power)
     {
-        leftMotor.setPower(power);
-        rightMotor.setPower(power);
-        /*
-        pidMotor.setPidPower(
-                power,
-                RobotInfo.ARM_UP_POSITION,
-                RobotInfo.ARM_DOWN_POSITION,
-                true);
-                */
+        if (debugEnabled)
+        {
+            dbgTrace.traceInfo(
+                    moduleName, "Arm: power=%.2f, lPos=%.0f, rPos=%.0f",
+                    power, leftMotor.getPosition(), rightMotor.getPosition());
+        }
+
+        //
+        // Don't synchronize the motors if in manual override mode. This is useful if the
+        // encoder or limit switches are malfunctioning. Synchronization needs the lower
+        // limit switch and encoder. So if any of these are malfunctioning, we need a way
+        // to still control the arm in a reasonable fashion.
+        //
+        pidMotor.setPower(power, !manualOverride);
     }
 
     //

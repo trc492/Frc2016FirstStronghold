@@ -7,21 +7,25 @@ import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.*;
 
 import edu.wpi.first.wpilibj.CameraServer;
-import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import edu.wpi.first.wpilibj.vision.AxisCamera;
 import hallib.HalDashboard;
+import hallib.HalUtil;
 import trclib.TrcDbgTrace;
 
 public class FrcVision implements Runnable
 {
     private static final String moduleName = "FrcVision";
     private static final boolean debugEnabled = false;
-    private static final boolean visionPerfEnabled = false;
     private TrcDbgTrace dbgTrace = null;
 
-    public class ParticleReport
-            implements Comparator<ParticleReport>, Comparable<ParticleReport>
+    public interface ImageProvider
+    {
+        public boolean getImage(Image image);
+    }   //interface ImageProvider
+
+    private static final boolean visionPerfEnabled = false;
+
+    public class ParticleReport implements Comparator<ParticleReport>, Comparable<ParticleReport>
     {
         public int imageWidth;
         public int imageHeight;
@@ -43,7 +47,7 @@ public class FrcVision implements Runnable
         }
     }   //class ParticleReport
 
-    private AxisCamera camera;
+    private ImageProvider camera;
     private ColorMode colorMode;
     private Range[] colorThresholds;
     private boolean doConvexHull;
@@ -55,15 +59,14 @@ public class FrcVision implements Runnable
     private Object monitor;
     private Thread visionThread = null;
 
-    private String imageFile = null;
-    private double processingPeriod = 0.05;
+    private long processingInterval = 50;   // in msec
     private boolean sendImageEnabled = true;
     private boolean taskEnabled = false;
     private boolean oneShotEnabled = false;
     private Vector<ParticleReport> targets = null;
 
     public FrcVision(
-            AxisCamera camera,
+            ImageProvider camera,
             ImageType imageType,
             ColorMode colorMode,
             Range[] colorThresholds,
@@ -148,59 +151,31 @@ public class FrcVision implements Runnable
         return taskEnabled;
     }   //isTaskEnabled
 
-    public void setProcessingPeriod(double period)
+    public void setProcessingInterval(long interval)
     {
-        final String funcName = "setProcessingPeriod";
+        final String funcName = "setProcessingInterval";
         if (debugEnabled)
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API,
-                    "period=%f", period);
+                    "interval=%dms", interval);
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
-        processingPeriod = period;
-    }   //setProcessPeriod
+        processingInterval = interval;
+    }   //setProcessInterval
 
-    public double getProcessingPeriod()
+    public long getProcessingInterval()
     {
-        final String funcName = "getProcessingPeriod";
+        final String funcName = "getProcessingInterval";
         if (debugEnabled)
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API,
-                    "=%f", processingPeriod);
+                    "=%d", processingInterval);
         }
 
-        return processingPeriod;
+        return processingInterval;
     }   //getProcessingPeriod
-
-    public void setImageFile(String imageFile)
-    {
-        final String funcName = "setImageFile";
-        if (debugEnabled)
-        {
-            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API,
-                    "file=%s", imageFile);
-            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
-        }
-
-        this.imageFile = imageFile;
-    }   //setImageFile
-
-    public void setSendImageEnabled(boolean enabled)
-    {
-        final String funcName = "setSendImageEnabled";
-        if (debugEnabled)
-        {
-            dbgTrace.traceEnter(
-                    funcName, TrcDbgTrace.TraceLevel.API,
-                    "enabled=%s", Boolean.toString(enabled));
-            dbgTrace.traceExit(
-                    funcName, TrcDbgTrace.TraceLevel.API);
-        }
-
-        sendImageEnabled = enabled;
-    }   //setSendImageEnabled
 
     public Vector<ParticleReport> getTargets()
     {
@@ -237,6 +212,9 @@ public class FrcVision implements Runnable
         {
             synchronized(monitor)
             {
+                //
+                // Wait until we are enabled.
+                //
                 while (!taskEnabled && !oneShotEnabled)
                 {
                     try
@@ -249,27 +227,12 @@ public class FrcVision implements Runnable
                 }
             }
 
-            double nextPeriodTime =
-                    Timer.getFPGATimestamp() + processingPeriod;
+            long startTime = HalUtil.getCurrentTimeMillis();
 
             processImage();
 
-            while (Timer.getFPGATimestamp() < nextPeriodTime)
-            {
-                try
-                {
-                    Thread.sleep((int)
-                            ((nextPeriodTime - Timer.getFPGATimestamp())*
-                             1000));
-                }
-                catch (InterruptedException e)
-                {
-                }
-                catch (IllegalArgumentException e)
-                {
-                    break;
-                }
-            }
+            long sleepTime = processingInterval - (HalUtil.getCurrentTimeMillis() - startTime);
+            HalUtil.sleep(sleepTime);
         }
     }   //run
 
@@ -281,26 +244,15 @@ public class FrcVision implements Runnable
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.TASK);
         }
 
-        boolean hasImage = false;
         double totalTime = 0.0;
         double startTime;
         double deltaTime;
 
-        if (camera != null)
-        {
-            hasImage = camera.isFreshImage() && camera.getImage(image);
-        }
-        else if (imageFile != null)
-        {
-            NIVision.imaqReadFile(image, imageFile);
-            hasImage = true;
-        }
-
-        if (hasImage)
+        if (camera != null && camera.getImage(image))
         {
             if (visionPerfEnabled)
             {
-                startTime = Timer.getFPGATimestamp();
+                startTime = HalUtil.getCurrentTime();
             }
             NIVision.imaqColorThreshold(
                     binaryImage,
@@ -312,7 +264,7 @@ public class FrcVision implements Runnable
                     colorThresholds[2]);
             if (visionPerfEnabled)
             {
-                deltaTime = Timer.getFPGATimestamp() - startTime;
+                deltaTime = HalUtil.getCurrentTime() - startTime;
                 totalTime += deltaTime;
                 SmartDashboard.putNumber("ColorThresholdTime", deltaTime);
             }
@@ -321,12 +273,12 @@ public class FrcVision implements Runnable
             {
                 if (visionPerfEnabled)
                 {
-                    startTime = Timer.getFPGATimestamp();
+                    startTime = HalUtil.getCurrentTime();
                 }
                 NIVision.imaqConvexHull(binaryImage, binaryImage, 1);
                 if (visionPerfEnabled)
                 {
-                    deltaTime = Timer.getFPGATimestamp() - startTime;
+                    deltaTime = HalUtil.getCurrentTime() - startTime;
                     totalTime += deltaTime;
                     SmartDashboard.putNumber("ConvexHullTime", deltaTime);
                 }
@@ -334,7 +286,7 @@ public class FrcVision implements Runnable
 
             if (visionPerfEnabled)
             {
-                startTime = Timer.getFPGATimestamp();
+                startTime = HalUtil.getCurrentTime();
             }
             NIVision.imaqParticleFilter4(
                     binaryImage,
@@ -344,7 +296,7 @@ public class FrcVision implements Runnable
                     null);
             if (visionPerfEnabled)
             {
-                deltaTime = Timer.getFPGATimestamp() - startTime;
+                deltaTime = HalUtil.getCurrentTime() - startTime;
                 totalTime += deltaTime;
                 HalDashboard.putNumber("ParticleFilterTime", deltaTime);
             }
@@ -360,7 +312,7 @@ public class FrcVision implements Runnable
                         NIVision.imaqGetImageSize(binaryImage);
                 if (visionPerfEnabled)
                 {
-                    startTime = Timer.getFPGATimestamp();
+                    startTime = HalUtil.getCurrentTime();
                 }
 
                 for(int i = 0; i < numParticles; i++)
@@ -409,7 +361,7 @@ public class FrcVision implements Runnable
                 particles.sort(null);
                 if (visionPerfEnabled)
                 {
-                    deltaTime = Timer.getFPGATimestamp() - startTime;
+                    deltaTime = HalUtil.getCurrentTime() - startTime;
                     totalTime += deltaTime;
                     HalDashboard.putNumber("PrepareReportTime", deltaTime);
                 }

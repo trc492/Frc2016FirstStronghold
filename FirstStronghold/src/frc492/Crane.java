@@ -2,15 +2,16 @@ package frc492;
 
 import edu.wpi.first.wpilibj.CANTalon.FeedbackDevice;
 import frclib.FrcCANTalon;
+import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
 
 public class Crane implements TrcPidController.PidInput
 {		
-	private static final String moduleName = "Crane";
+    private static final String moduleName = "Crane";
 
-
+    private HalDashboard dashboard = HalDashboard.getInstance();
     private FrcCANTalon winchMotor;
     private FrcCANTalon craneMotor;
     private TrcPidController cranePidCtrl;
@@ -19,7 +20,7 @@ public class Crane implements TrcPidController.PidInput
     private FrcCANTalon tilterMotor;
     private TrcPidController tilterPidCtrl;
     private TrcPidMotor tilterPidMotor;
-    
+
     /**
      * Constructor: Create an instance of the object.
      */
@@ -32,7 +33,7 @@ public class Crane implements TrcPidController.PidInput
         winchMotor = new FrcCANTalon(RobotInfo.CANID_WINCH);
         winchMotor.setInverted(true);
         winchMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
-        winchMotor.reverseSensor(true);
+        winchMotor.reverseSensor(false);
 
         //
         // Crane has a motor, an encoder, lower and upper limit switches.
@@ -55,12 +56,15 @@ public class Crane implements TrcPidController.PidInput
                 RobotInfo.CRANE_SETTLING,
                 this);
         cranePidCtrl.setAbsoluteSetPoint(true);
+        cranePidMotor = new TrcPidMotor(moduleName + ".crane", craneMotor, cranePidCtrl);
+        /*
         cranePidMotor = new TrcPidMotor(
                 moduleName + ".crane",
                 craneMotor, winchMotor,
                 RobotInfo.CRANE_SYNC_GAIN, cranePidCtrl);
+        */
         //??? What to do about the encoder scale difference between crane and winch motors???
-        cranePidMotor.setPositionScale(RobotInfo.CRANE_COUNTS_PER_INCH);
+        cranePidMotor.setPositionScale(RobotInfo.CRANE_INCHES_PER_COUNT);
 
         //
         // Tilter has a motor, an encoder and a lower limit switch.
@@ -69,6 +73,8 @@ public class Crane implements TrcPidController.PidInput
         tilterMotor = new FrcCANTalon(RobotInfo.CANID_TILTER);
         tilterMotor.setInverted(false);
         tilterMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        tilterMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        tilterMotor.setLimitSwitchesSwapped(true);
         tilterMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
         tilterMotor.reverseSensor(false);
         tilterPidCtrl = new TrcPidController(
@@ -83,13 +89,24 @@ public class Crane implements TrcPidController.PidInput
         tilterPidCtrl.setAbsoluteSetPoint(true);
         tilterPidMotor = new TrcPidMotor(
                 moduleName + ".tilter", tilterMotor, tilterPidCtrl);
-        tilterPidMotor.setPositionScale(RobotInfo.TILTER_COUNTS_PER_DEGREE);
+        tilterPidMotor.setPositionScale(RobotInfo.TILTER_DEGREES_PER_COUNT);
     }
-    
+
     public void displayDebugInfo(int lineNum)
     {
-        cranePidCtrl.displayPidInfo(lineNum);
-        tilterPidCtrl.displayPidInfo(lineNum + 2);
+        dashboard.displayPrintf(
+                lineNum, "Tilter: Angle=%.2f, SW=%d/%d",
+                getTilterAngle(),
+                tilterMotor.isLowerLimitSwitchActive()? 1: 0,
+                tilterMotor.isUpperLimitSwitchActive()? 1: 0);
+        dashboard.displayPrintf(
+                lineNum + 1, "Crane: Length=%.2f, SW=%d/%d",
+                getCraneLength(),
+                craneMotor.isLowerLimitSwitchActive()? 1: 0,
+                craneMotor.isUpperLimitSwitchActive()? 1: 0);   //???? Normal Open???
+        dashboard.displayPrintf(lineNum + 2, "Winch: Length=%.2f", getWinchLength());
+//        cranePidCtrl.displayPidInfo(lineNum + 3);
+//        tilterPidCtrl.displayPidInfo(lineNum + 5);
     }
 
     /*
@@ -99,27 +116,31 @@ public class Crane implements TrcPidController.PidInput
     {
         cranePidMotor.zeroCalibrate(RobotInfo.CRANE_CAL_POWER);
     }
-    
+
     public void zeroCalibrateTilter()
     {
         tilterPidMotor.zeroCalibrate(RobotInfo.TILTER_CAL_POWER);
     }
-    
+
     /*
      * Set power
      */
     public void setCranePower(double power)
     {
         craneMotor.setPower(power);
-        winchMotor.setPower(power);
-//    	cranePidMotor.setPower(power);
+//        cranePidMotor.setPower(power);
     }
-    
-    public void setTiltPower(double power)
+
+    public void setWinchPower(double power)
     {
-    	tilterPidMotor.setPower(power);
+        winchMotor.setPower(power);
     }
-    
+
+    public void setTilterPower(double power)
+    {
+        tilterPidMotor.setPower(power);
+    }
+
     /*
      * Set height or angle
      */
@@ -133,7 +154,7 @@ public class Crane implements TrcPidController.PidInput
         cranePidMotor.setTarget(length, event, timeout);
     }
     
-    public void setTitlerAngle(double angle)
+    public void setTilterAngle(double angle)
     {
         tilterPidMotor.setTarget(angle, true);
     }
@@ -148,17 +169,17 @@ public class Crane implements TrcPidController.PidInput
      */
     public double getCraneLength()
     {
-        return (craneMotor.getPosition()/RobotInfo.CRANE_COUNTS_PER_INCH);
+        return cranePidMotor.getPosition();
     }
     
     public double getWinchLength()
     {
-        return (winchMotor.getPosition()/RobotInfo.WINCH_COUNTS_PER_INCH);
+        return winchMotor.getPosition()*RobotInfo.WINCH_INCHES_PER_COUNT;
     }
     
     public double getTilterAngle()
     {
-        return (tilterMotor.getPosition()/RobotInfo.TILTER_COUNTS_PER_DEGREE);
+        return tilterPidMotor.getPosition();
     }
     
     public boolean isCraneLowerLimitSwitchActive()

@@ -21,14 +21,14 @@ public class RobotInfo
     public static final int CANID_RIGHTFRONTMOTOR       = 4;    //40A: Yellow
     public static final int CANID_LEFTREARMOTOR         = 5;    //40A: Green
     public static final int CANID_RIGHTREARMOTOR        = 6;    //40A: Blue
-    public static final int CANID_CRANE                 = 7;    //40A: Purple
-    public static final int CANID_TILTER                = 8;    //40A: Gray
-    public static final int CANID_RESERVED1             = 9;    //40A: White
-    public static final int CANID_RESERVED2             = 10;   //30A: Orange
-    public static final int CANID_LEFT_ARM              = 11;   //30A: Yellow
-    public static final int CANID_RIGHT_ARM             = 12;   //30A: Green
-    public static final int CANID_PICKUP                = 13;   //40A: Blue
-    public static final int CANID_WINCH                 = 14;   //40A: Purple
+    public static final int CANID_LEFT_ARM              = 7;    //30A: Purple
+    public static final int CANID_RIGHT_ARM             = 8;    //30A: Gray
+    public static final int CANID_CRANE                 = 9;    //40A: White
+    public static final int CANID_TILTER                = 10;   //40A: Orange
+    public static final int CANID_RESERVED1             = 11;   //40A: Yellow
+    public static final int CANID_WINCH                 = 12;   //40A: Green
+    public static final int CANID_PICKUP                = 13;   //30A: Blue
+    public static final int CANID_RESERVED2             = 14;   //30A: Purple
     
     public static final int CANID_PDP                   = 16;
     public static final int CANID_PCM1                  = 17;
@@ -50,19 +50,19 @@ public class RobotInfo
     // Miscellaneous sensors and devices.
     //
     public static final double ULTRASONIC_INCHESPERVOLT = (512.0/5.0);
-    public static final String USB_CAM_NAME             = "cam1";
+    public static final String USB_CAM_NAME             = "cam0";
 
     //
     // DriveBase subsystem.
     //
-    public static final double DRIVEBASE_X_SCALE        = 75.695968948315512041060994714416;
+    public static final double DRIVEBASE_X_SCALE        = 0.01321074310684615838703943056885;
     public static final double ENCODER_X_KP             = 0.045;
     public static final double ENCODER_X_KI             = 0.0;
     public static final double ENCODER_X_KD             = 0.0;
     public static final double ENCODER_X_KF             = 0.0;
     public static final double ENCODER_X_TOLERANCE      = 1.0;
     public static final double ENCODER_X_SETTLING       = 0.2;
-    public static final double DRIVEBASE_Y_SCALE        = 61.669616429709793669719405297833;
+    public static final double DRIVEBASE_Y_SCALE        = 0.01621544056690844936881352331858;
     public static final double ENCODER_Y_KP             = 0.018;
     public static final double ENCODER_Y_KI             = 0.0;
     public static final double ENCODER_Y_KD             = 0.01;
@@ -88,8 +88,8 @@ public class RobotInfo
     //
     // Arm subsystem.
     //
-    public static final double ARM_COUNTS_PER_DEGREE    = 0.55; //(100/180)
-    public static final double ARM_CAL_POWER            = 0.3;
+    public static final double ARM_DEGREES_PER_COUNT    = (180.0/100.0);
+    public static final double ARM_CAL_POWER            = 0.5;
     public static final double ARM_SYNC_GAIN            = 0.05;
     public static final double ARM_KP                   = 0.01;
     public static final double ARM_KI                   = 0.0;
@@ -103,11 +103,12 @@ public class RobotInfo
     //
     // Crane subsystem.
     //
-    public static final double WINCH_COUNTS_PER_INCH    = (2.3562/1120);
+    public static final double WINCH_INCHES_PER_COUNT   = (55.0/3983526.0);
     public static final double WINCH_MAX_LENGTH         = 80.0;
 
-    public static final double CRANE_COUNTS_PER_INCH    = (2.3562/1120);
-    public static final double CRANE_CAL_POWER          = 0.3;
+    public static final double CRANE_INCHES_PER_COUNT   = 1.0;
+    public static final double CRANE_CAL_POWER          = 0.5;
+    public static final double CRANE_POWER              = 0.75;
     public static final double CRANE_SYNC_GAIN          = 0.01;
     public static final double CRANE_KP                 = 1.0;
     public static final double CRANE_KI                 = 0.0;
@@ -118,8 +119,9 @@ public class RobotInfo
     public static final double CRANE_MIN_LENGTH         = 0.0;
     public static final double CRANE_MAX_LENGTH         = 90.0;
 
-    public static final double TILTER_COUNTS_PER_DEGREE = (2.3562/1120);
-    public static final double TILTER_CAL_POWER         = 0.3;
+    public static final double TILTER_DEGREES_PER_COUNT = 0.001;
+    public static final double TILTER_CAL_POWER         = 0.2;
+    public static final double TILTER_POWER             = 0.25;
     public static final double TILTER_KP                = 1.0;
     public static final double TILTER_KI                = 0.0;
     public static final double TILTER_KD                = 0.0;
@@ -129,4 +131,6 @@ public class RobotInfo
     public static final double TILTER_MIN_ANGLE         = 0.0;
     public static final double TILTER_MAX_ANGLE         = 90.0;
 
+    public static final double PICKUP_IN_POWER          = 0.5;
+    public static final double PICKUP_OUT_POWER         = 1.0;
 }   //class RobotInfo

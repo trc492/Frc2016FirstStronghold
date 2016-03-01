@@ -49,7 +49,7 @@ public interface HalMotorController
      * back EMF to stop the motor. When brakMode is false (i.e. float/coast mode), the motor wires
      * are just disconnected from the motor controller so the motor will stop gradually.
      *
-     * @param brakeMode specifies true to enable brake mode, false otherwise.
+     * @param enabled specifies true to enable brake mode, false otherwise.
      */
     public void setBrakeModeEnabled(boolean enabled);
 
@@ -63,7 +63,7 @@ public interface HalMotorController
     /**
      * This method sets the output power of the motor controller.
      *
-     * @param output specifies the output power for the motor controller in the range of
+     * @param power specifies the output power for the motor controller in the range of
      *               -1.0 to 1.0.
      */
     public void setPower(double power);

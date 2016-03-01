@@ -245,8 +245,8 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             pos += motor2.getPosition();
             n++;
         }
-        pos /= positionScale/n;
-        
+        pos *= positionScale/n;
+
         if (debugEnabled)
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
@@ -392,9 +392,11 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * @param power specifies the motor power.
      * @param rangeLow specifies the range low limit.
      * @param rangeHigh specifies the range high limit.
+     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
      * @param stopPid specifies true to stop previous PID operation, false otherwise.
      */
-    private void setPower(double power, double rangeLow, double rangeHigh, boolean stopPid)
+    private void setPower(
+            double power, double rangeLow, double rangeHigh, boolean syncEnabled, boolean stopPid)
     {
         final String funcName = "setPower";
 
@@ -468,7 +470,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     }
                 }
 
-                setMotorPower(motorPower);
+                setMotorPower(motorPower, syncEnabled);
             }
         }
 
@@ -487,10 +489,40 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * @param power specifies the motor power.
      * @param rangeLow specifies the range low limit.
      * @param rangeHigh specifies the range high limit.
+     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
+     */
+    public void setPower(double power, double rangeLow, double rangeHigh, boolean syncEnabled)
+    {
+        setPower(power, rangeLow, rangeHigh, syncEnabled, true);
+    }   //setPower
+
+    /**
+     * This method sets the PID motor power. It will check for the limit switches.
+     * If activated, it won't allow the motor to go in that direction. It will also
+     * check for stalled condition and cut motor power if stalled detected. It will
+     * also check to reset the stalled condition if reset timeout was specified.
+     *
+     * @param power specifies the motor power.
+     * @param rangeLow specifies the range low limit.
+     * @param rangeHigh specifies the range high limit.
      */
     public void setPower(double power, double rangeLow, double rangeHigh)
     {
-        setPower(power, rangeLow, rangeHigh, true);
+        setPower(power, rangeLow, rangeHigh, false, true);
+    }   //setPower
+
+    /**
+     * This method sets the PID motor power. It will check for the limit switches.
+     * If activated, it won't allow the motor to go in that direction. It will also
+     * check for stalled condition and cut motor power if stalled detected. It will
+     * also check to reset the stalled condition if reset timeout was specified.
+     *
+     * @param power specifies the motor power.
+     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
+     */
+    public void setPower(double power, boolean syncEnabled)
+    {
+        setPower(power, MIN_MOTOR_POWER, MAX_MOTOR_POWER, syncEnabled, true);
     }   //setPower
 
     /**
@@ -503,7 +535,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      */
     public void setPower(double power)
     {
-        setPower(power, MIN_MOTOR_POWER, MAX_MOTOR_POWER, true);
+        setPower(power, MIN_MOTOR_POWER, MAX_MOTOR_POWER, false, true);
     }   //setPower
 
     /**
@@ -556,7 +588,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     //
                     // Hold target at current position.
                     //
-                    setTarget(motor1.getPosition()/positionScale, true, null, 0.0);
+                    setTarget(motor1.getPosition()*positionScale, true, null, 0.0);
                 }
                 else
                 {
@@ -638,8 +670,9 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * This method sets the motor power. If there are two motors, it will set both.
      *
      * @param power specifies the motor power.
+     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
      */
-    private void setMotorPower(double power)
+    private void setMotorPower(double power, boolean syncEnabled)
     {
         final String funcName = "setMotorPower";
 
@@ -647,33 +680,20 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         {
             dbgTrace.traceEnter(
                     funcName, TrcDbgTrace.TraceLevel.API,
-                    "power=%f", power);
+                    "power=%f,syncEnabled=%s", power, Boolean.toString(syncEnabled));
         }
 
         if (motor1.isLowerLimitSwitchActive())
         {
             motor1.resetPosition();
         }
-        
+
         if (motor2 != null && syncGain != 0.0 && motor2.isLowerLimitSwitchActive())
         {
             motor2.resetPosition();
         }
-        
-        if (power == 0.0 || syncGain == 0.0 || calPower != 0.0)
-        {
-            //
-            // If we are not sync'ing or is in zero calibration mode, just set the motor power.
-            // If we are stopping the motor, even if we are sync'ing, we should just stop. But
-            // we should still observe the limit switches.
-            //
-            motor1.setPower(power);
-            if (motor2 != null)
-            {
-                motor2.setPower(power);
-            }
-        }
-        else
+
+        if (power != 0.0 && syncEnabled && syncGain != 0.0 && calPower == 0.0)
         {
             double pos1 = motor1.getPosition();
             double pos2 = motor2.getPosition();
@@ -695,15 +715,28 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 power1 = TrcUtil.limit(power1, -1.0, 0.0);
                 power2 = TrcUtil.limit(power2, -1.0, 0.0);
             }
-            
+
             motor1.setPower(power1);
             motor2.setPower(power2);
-            
+
             if (debugEnabled)
             {
                 dbgTrace.traceInfo(funcName,
                         "P=%.2f,dP=%.2f,pos1=%.0f,pos2=%.0f,P1=%.2f,P2=%.2f",
                         power, deltaPower, pos1, pos2, power1, power2);
+            }
+        }
+        else
+        {
+            //
+            // If we are not sync'ing or is in zero calibration mode, just set the motor power.
+            // If we are stopping the motor, even if we are sync'ing, we should just stop. But
+            // we should still observe the limit switches.
+            //
+            motor1.setPower(power);
+            if (motor2 != null)
+            {
+                motor2.setPower(power);
             }
         }
 
@@ -737,7 +770,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
         if (stopMotor)
         {
-            setMotorPower(0.0);
+            setMotorPower(0.0, false);
         }
 
         motorPower = 0.0;
@@ -866,7 +899,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             {
                 motor1ZeroCalDone = true;
             }
-            
+
             if (!motor2ZeroCalDone && motor2.isLowerLimitSwitchActive())
             {
                 motor2ZeroCalDone = true;
@@ -880,7 +913,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 calPower = 0.0;
                 setActive(false);
             }
-            setMotorPower(calPower);
+            setMotorPower(calPower, false);
         }
         else
         {

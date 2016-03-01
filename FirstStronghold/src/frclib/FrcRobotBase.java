@@ -246,7 +246,7 @@ public abstract class FrcRobotBase extends RobotBase
                 //
                 // Start current mode.
                 //
-                modeStartTime = Timer.getFPGATimestamp();
+                modeStartTime = HalUtil.getCurrentTime();
                 if (currMode == RunMode.DISABLED_MODE)
                 {
                     LiveWindow.setEnabled(false);
@@ -377,10 +377,10 @@ public abstract class FrcRobotBase extends RobotBase
             {
                 dashboard.displayPrintf(
                         0,
-                        "%s: [%d:%06.3f]",
-                        currMode.toString(),
+                        "[%3d:%06.3f] %s",
                         (int)(modeElapsedTime/60),
-                        modeElapsedTime%60);
+                        modeElapsedTime%60,
+                        currMode.toString());
             }
         }
     }   //startCompetition
