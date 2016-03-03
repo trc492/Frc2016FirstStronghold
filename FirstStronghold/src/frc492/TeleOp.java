@@ -2,11 +2,14 @@ package frc492;
 
 import frclib.FrcJoystick;
 import frclib.FrcRGBLight;
+import frclib.FrcRobotBase;
 import trclib.TrcBooleanState;
+import trclib.TrcDbgTrace;
 import trclib.TrcRobot;
 
 public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
 {
+    protected TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
     private static final boolean debugVision = false;
 
     private enum DriveMode
@@ -34,7 +37,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         FrcRGBLight.RGBColor.RGB_WHITE
     };
 
-    private Robot robot;
+    protected Robot robot;
 
     //
     // Input subsystem.
