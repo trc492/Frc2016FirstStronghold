@@ -1,16 +1,17 @@
 package frc492;
 
 import frclib.FrcJoystick;
-import frclib.FrcRGBLight;
 import frclib.FrcRobotBase;
 import trclib.TrcBooleanState;
 import trclib.TrcDbgTrace;
+import trclib.TrcRGBLight;
 import trclib.TrcRobot;
+import trclib.TrcRGBLight.RGBColor;
 
 public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
 {
     protected TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
-    private static final boolean debugVision = false;
+    private static final boolean debugVision = true;
 
     private enum DriveMode
     {
@@ -25,18 +26,6 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         WINCH_MODE
     }   //enum OperatorStickMode
 
-    private static final FrcRGBLight.RGBColor[] colorTable =
-    {
-        FrcRGBLight.RGBColor.RGB_BLACK,
-        FrcRGBLight.RGBColor.RGB_RED,
-        FrcRGBLight.RGBColor.RGB_GREEN,
-        FrcRGBLight.RGBColor.RGB_YELLOW,
-        FrcRGBLight.RGBColor.RGB_BLUE,
-        FrcRGBLight.RGBColor.RGB_MAGENTA,
-        FrcRGBLight.RGBColor.RGB_CYAN,
-        FrcRGBLight.RGBColor.RGB_WHITE
-    };
-
     protected Robot robot;
 
     //
@@ -50,7 +39,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     private TrcBooleanState ledFlashingToggle = new TrcBooleanState("LEDFlashing", false);
     private boolean slowDriveOverride = false;
     private boolean syncArmEnabled = true;
-    private int colorIndex = 0;
+    private int colorValue = 0;
     private DriveMode driveMode = DriveMode.MECANUM_MODE;
     private OperatorStickMode operatorStickMode = OperatorStickMode.ARM_MODE;
 
@@ -218,12 +207,11 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                             ledFlashingToggle.toggleState();
                             if (ledFlashingToggle.getState())
                             {
-                                robot.rgbLight.setColor(
-                                        colorTable[colorIndex], 0.5, 0.5, null);
+                                robot.rgbLight.setColor(RGBColor.getColor(colorValue), 0.5, 0.5);
                             }
                             else
                             {
-                                robot.rgbLight.setColor(colorTable[colorIndex]);
+                                robot.rgbLight.setColor(RGBColor.getColor(colorValue));
                             }
                         }
                     }
@@ -234,20 +222,19 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                     {
                         if (pressed)
                         {
-                            colorIndex++;
-                            if (colorIndex >= colorTable.length)
+                            colorValue++;
+                            if (colorValue > TrcRGBLight.COLOR_MAX_VALUE)
                             {
-                                colorIndex = 0;
+                                colorValue = TrcRGBLight.COLOR_MIN_VALUE;
                             }
 
                             if (ledFlashingToggle.getState())
                             {
-                                robot.rgbLight.setColor(
-                                        colorTable[colorIndex], 0.5, 0.5, null);
+                                robot.rgbLight.setColor(RGBColor.getColor(colorValue), 0.5, 0.5);
                             }
                             else
                             {
-                                robot.rgbLight.setColor(colorTable[colorIndex]);
+                                robot.rgbLight.setColor(RGBColor.getColor(colorValue));
                             }
                         }
                     }

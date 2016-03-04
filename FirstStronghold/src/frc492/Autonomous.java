@@ -18,7 +18,6 @@ public class Autonomous implements TrcRobot.RobotMode
         AUTOMODE_PORTCULLIS
     }
 
-    private HalDashboard dashboard = HalDashboard.getInstance();
     private Robot robot;
     private SendableChooser autoChooser;
     private TrcRobot.AutoStrategy autoStrategy;

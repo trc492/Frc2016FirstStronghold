@@ -11,8 +11,8 @@ import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CameraServer;
 import frclib.FrcADXRS450Gyro;
 import frclib.FrcCANTalon;
+import frclib.FrcDigitalRGB;
 import frclib.FrcRobotBase;
-import frclib.FrcRGBLight;
 import frclib.FrcVision;
 import hallib.HalDashboard;
 import hallib.HalUtil;
@@ -33,14 +33,13 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                                                    FrcVision.ImageProvider
 {
     private static final String programName = "FirstStronghold";
-    private static final String moduleName = "Robot";
     private TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
 
     private static final boolean usbCameraEnabled = true;
     private static final boolean visionTargetEnabled = true;
-    private static final boolean debugDriveBase = true;
-    private static final boolean debugArm = true;
-    private static final boolean debugCrane = true;
+    private static final boolean debugDriveBase = false;
+    private static final boolean debugArm = false;
+    private static final boolean debugCrane = false;
     private static final boolean debugPidDrive = false;
     private static final boolean debugPidSonar = false;
     private static final double DASHBOARD_UPDATE_INTERVAL = 0.1;
@@ -61,7 +60,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     private CameraServer cameraServer = null;
     private int usbCamSession = -1;
     private Image usbCamImage = null;
-    private Image displayImage = null;
+    private Image overlayImage = null;
     private boolean freshImage = false;
     private boolean videoEnabled = false;
 
@@ -88,7 +87,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     public Arm arm;
     public Crane crane;
     public FrcCANTalon pickup;
-    public FrcRGBLight rgbLight;
+    public FrcDigitalRGB rgbLight;
 
     //
     // Vision target subsystem.
@@ -171,7 +170,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 NIVision.IMAQdxConfigureGrab(usbCamSession);
 
                 usbCamImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
-                displayImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
+                overlayImage = NIVision.imaqCreateImage(ImageType.IMAGE_RGB, 0);
                 cameraServer = CameraServer.getInstance();
                 cameraServer.setQuality(30);
             }
@@ -287,12 +286,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         //
         if (RobotInfo.ENABLE_LEDS)
         {
-            rgbLight = new FrcRGBLight(
+            rgbLight = new FrcDigitalRGB(
                     "rgbLight",
-                    RobotInfo.CANID_PCM1,
-                    RobotInfo.SOL_LED_RED,
-                    RobotInfo.SOL_LED_GREEN,
-                    RobotInfo.SOL_LED_BLUE);
+                    RobotInfo.DOUT_RGB_RED,
+                    RobotInfo.DOUT_RGB_GREEN,
+                    RobotInfo.DOUT_RGB_BLUE);
         }
         else
         {
@@ -362,14 +360,16 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 NIVision.Rect rect = visionTarget != null? visionTarget.getLastTargetRect(): null;
                 if (rect != null)
                 {
+//                    NIVision.imaqDuplicate(overlayImage, usbCamImage);
                     NIVision.imaqDrawShapeOnImage(
+                            overlayImage,
                             usbCamImage,
-                            displayImage,
+//                            overlayImage,
                             rect,
                             DrawMode.DRAW_VALUE,
                             ShapeMode.SHAPE_RECT,
                             (float)0x0);
-                    cameraServer.setImage(displayImage);
+                    cameraServer.setImage(overlayImage);
                 }
                 else
                 {
@@ -451,19 +451,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     //
     // Implements FrcVision.ImageProvider.
     //
+
     @Override
-    public boolean getImage(Image image)
+    public Image getImage()
     {
-        boolean isFresh = false;
-
-        if (freshImage)
-        {
-            NIVision.imaqDuplicate(image, usbCamImage);
-            freshImage = false;
-            isFresh = true;
-        }
-
-        return isFresh;
+        return freshImage? usbCamImage: null;
     }   //getImage
 
 }   //class Robot

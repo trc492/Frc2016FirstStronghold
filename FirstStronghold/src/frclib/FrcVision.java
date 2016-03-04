@@ -6,7 +6,6 @@ import java.util.Vector;
 import com.ni.vision.NIVision;
 import com.ni.vision.NIVision.*;
 
-import edu.wpi.first.wpilibj.CameraServer;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import hallib.HalDashboard;
 import hallib.HalUtil;
@@ -20,7 +19,7 @@ public class FrcVision implements Runnable
 
     public interface ImageProvider
     {
-        public boolean getImage(Image image);
+        public Image getImage();
     }   //interface ImageProvider
 
     private static final boolean visionPerfEnabled = false;
@@ -54,13 +53,11 @@ public class FrcVision implements Runnable
     private ParticleFilterCriteria2[] filterCriteria;
     private ParticleFilterOptions2 filterOptions;
 
-    private Image image;
     private Image binaryImage;
     private Object monitor;
     private Thread visionThread = null;
 
     private long processingInterval = 50;   // in msec
-    private boolean sendImageEnabled = true;
     private boolean taskEnabled = false;
     private boolean oneShotEnabled = false;
     private Vector<ParticleReport> targets = null;
@@ -95,7 +92,6 @@ public class FrcVision implements Runnable
                     "Color threshold array must have 3 elements.");
         }
 
-        image = NIVision.imaqCreateImage(imageType, 0);
         binaryImage = NIVision.imaqCreateImage(ImageType.IMAGE_U8, 0);
 
         monitor = new Object();
@@ -247,8 +243,9 @@ public class FrcVision implements Runnable
         double totalTime = 0.0;
         double startTime;
         double deltaTime;
+        Image image = camera != null? camera.getImage(): null;
 
-        if (camera != null && camera.getImage(image))
+        if (image != null)
         {
             if (visionPerfEnabled)
             {
@@ -364,11 +361,6 @@ public class FrcVision implements Runnable
                     deltaTime = HalUtil.getCurrentTime() - startTime;
                     totalTime += deltaTime;
                     HalDashboard.putNumber("PrepareReportTime", deltaTime);
-                }
-
-                if (sendImageEnabled)
-                {
-                    CameraServer.getInstance().setImage(binaryImage);
                 }
 
                 synchronized(monitor)

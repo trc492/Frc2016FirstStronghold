@@ -15,6 +15,13 @@ public class RobotInfo
     public static final int JSPORT_OPERATORSTICK        = 2;
 
     //
+    // Digital Output ports.
+    //
+    public static final int DOUT_RGB_RED                = 0;
+    public static final int DOUT_RGB_GREEN              = 1;
+    public static final int DOUT_RGB_BLUE               = 2;
+
+    //
     // CAN IDs.
     //
     public static final int CANID_LEFTFRONTMOTOR        = 3;    //40A: Orange
