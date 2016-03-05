@@ -193,6 +193,12 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
+        if (sm.isEnabled())
+        {
+            timer.cancel();
+            sm.stop();
+        }
+
         setRed((colorValue & COLOR_RED) != 0);
         setGreen((colorValue & COLOR_GREEN) != 0);
         setBlue((colorValue & COLOR_BLUE) != 0);
@@ -224,12 +230,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
-        if (sm.isEnabled())
-        {
-            sm.stop();
-            setColor(RGBColor.RGB_BLACK);
-        }
-
+        setColor(RGBColor.RGB_BLACK);
         this.color = color;
         this.onPeriod = onPeriod;
         this.offPeriod = offPeriod;
@@ -261,6 +262,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
     @Override
     public void stopTask(TrcRobot.RunMode runMode)
     {
+        setColor(RGBColor.RGB_BLACK);
     }   //stopTask
 
     @Override

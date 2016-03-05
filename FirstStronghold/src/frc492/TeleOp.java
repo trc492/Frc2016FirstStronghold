@@ -150,8 +150,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         double power = operatorStick.getYWithDeadband(true);
         if (operatorStickMode == OperatorStickMode.ARM_MODE)
         {
-//            robot.arm.setPower(power, syncArmEnabled);
-            robot.arm.setPower(power, false);
+            robot.arm.setPower(power, syncArmEnabled);
         }
         else
         {
@@ -243,7 +242,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON10:
                     if (debugVision)
                     {
-                        if (pressed)
+                        if (pressed && robot.visionTarget != null)
                         {
                             robot.visionTarget.getTargetReport();
                         }
