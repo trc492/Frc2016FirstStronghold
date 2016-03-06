@@ -30,6 +30,8 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
 {
     private boolean feedbackDeviceIsPot = false;
     private boolean limitSwitchesSwapped = false;
+    private boolean revLimitSwitchNormalOpen = false;
+    private boolean fwdLimitSwitchNormalOpen = false;
     private double zeroPosition = 0.0;
     
     /**
@@ -79,12 +81,26 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     }   //setLimitSwitchesSwapped
     
     @Override
+    public void ConfigFwdLimitSwitchNormallyOpen(boolean normalOpen)
+    {
+        super.ConfigFwdLimitSwitchNormallyOpen(normalOpen);
+        fwdLimitSwitchNormalOpen = normalOpen;
+    }
+    
+    @Override
+    public void ConfigRevLimitSwitchNormallyOpen(boolean normalOpen)
+    {
+        super.ConfigRevLimitSwitchNormallyOpen(normalOpen);
+        revLimitSwitchNormalOpen = normalOpen;
+    }
+
+    @Override
     public void setFeedbackDevice(FeedbackDevice devType)
     {
         super.setFeedbackDevice(devType);
         feedbackDeviceIsPot = devType == FeedbackDevice.AnalogPot;
     }
-    
+
     //
     // Implements HalMotorController interface.
     //
@@ -138,7 +154,8 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     @Override
     public boolean isLowerLimitSwitchActive()
     {
-        return limitSwitchesSwapped? !isFwdLimitSwitchClosed(): !isRevLimitSwitchClosed();
+        return limitSwitchesSwapped? !(fwdLimitSwitchNormalOpen^isFwdLimitSwitchClosed()):
+                                     !(revLimitSwitchNormalOpen^isRevLimitSwitchClosed());
     }   //isLowerLimitSwitchClosed
 
     /**
@@ -149,7 +166,8 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     @Override
     public boolean isUpperLimitSwitchActive()
     {
-        return limitSwitchesSwapped? !isRevLimitSwitchClosed(): !isFwdLimitSwitchClosed();
+        return limitSwitchesSwapped? !(revLimitSwitchNormalOpen^isRevLimitSwitchClosed()):
+                                     !(fwdLimitSwitchNormalOpen^isFwdLimitSwitchClosed());
     }   //isUpperLimitSwitchActive
 
     /**

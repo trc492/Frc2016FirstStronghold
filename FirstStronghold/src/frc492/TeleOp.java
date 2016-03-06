@@ -36,10 +36,14 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     private FrcJoystick operatorStick;
 
     private TrcBooleanState ringLightPowerToggle = new TrcBooleanState("RingLightPower", false);
-    private TrcBooleanState ledFlashingToggle = new TrcBooleanState("LEDFlashing", false);
+    private TrcBooleanState leftLightFlashingToggle =
+            new TrcBooleanState("leftLightFlashing", false);
+    private TrcBooleanState rightLightFlashingToggle =
+            new TrcBooleanState("rightLightFlashing", false);
     private boolean slowDriveOverride = false;
     private boolean syncArmEnabled = true;
-    private int colorValue = 0;
+    private int leftColorValue = 0;
+    private int rightColorValue = 0;
     private DriveMode driveMode = DriveMode.MECANUM_MODE;
     private OperatorStickMode operatorStickMode = OperatorStickMode.ARM_MODE;
 
@@ -72,6 +76,8 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     public void startMode()
     {
         robot.arm.zeroCalibrate();
+        robot.crane.zeroCalibrateTilter();
+        robot.crane.zeroCalibarateCrane();
 //        robot.ultrasonic.setEnabled(true);
         robot.driveBase.resetPosition();
 
@@ -198,42 +204,87 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                     }
                     break;
 
-                case FrcJoystick.LOGITECH_BUTTON8:
-                    if (robot.rgbLight != null)
+                case FrcJoystick.LOGITECH_BUTTON6:
+                    if (robot.leftLight != null)
                     {
                         if (pressed)
                         {
-                            ledFlashingToggle.toggleState();
-                            if (ledFlashingToggle.getState())
+                            leftLightFlashingToggle.toggleState();
+                            if (leftLightFlashingToggle.getState())
                             {
-                                robot.rgbLight.setColor(RGBColor.getColor(colorValue), 0.5, 0.5);
+                                robot.leftLight.setColor(
+                                        RGBColor.getColor(leftColorValue), 0.5, 0.5);
                             }
                             else
                             {
-                                robot.rgbLight.setColor(RGBColor.getColor(colorValue));
+                                robot.leftLight.setColor(RGBColor.getColor(leftColorValue));
+                            }
+                        }
+                    }
+                    break;
+
+                case FrcJoystick.LOGITECH_BUTTON7:
+                    if (robot.leftLight != null)
+                    {
+                        if (pressed)
+                        {
+                            leftColorValue++;
+                            if (leftColorValue > TrcRGBLight.COLOR_MAX_VALUE)
+                            {
+                                leftColorValue = TrcRGBLight.COLOR_MIN_VALUE;
+                            }
+
+                            if (leftLightFlashingToggle.getState())
+                            {
+                                robot.leftLight.setColor(
+                                        RGBColor.getColor(leftColorValue), 0.5, 0.5);
+                            }
+                            else
+                            {
+                                robot.leftLight.setColor(RGBColor.getColor(leftColorValue));
+                            }
+                        }
+                    }
+                    break;
+
+                case FrcJoystick.LOGITECH_BUTTON8:
+                    if (robot.rightLight != null)
+                    {
+                        if (pressed)
+                        {
+                            rightLightFlashingToggle.toggleState();
+                            if (rightLightFlashingToggle.getState())
+                            {
+                                robot.rightLight.setColor(
+                                        RGBColor.getColor(rightColorValue), 0.5, 0.5);
+                            }
+                            else
+                            {
+                                robot.rightLight.setColor(RGBColor.getColor(rightColorValue));
                             }
                         }
                     }
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON9:
-                    if (robot.rgbLight != null)
+                    if (robot.rightLight != null)
                     {
                         if (pressed)
                         {
-                            colorValue++;
-                            if (colorValue > TrcRGBLight.COLOR_MAX_VALUE)
+                            rightColorValue++;
+                            if (rightColorValue > TrcRGBLight.COLOR_MAX_VALUE)
                             {
-                                colorValue = TrcRGBLight.COLOR_MIN_VALUE;
+                                rightColorValue = TrcRGBLight.COLOR_MIN_VALUE;
                             }
 
-                            if (ledFlashingToggle.getState())
+                            if (rightLightFlashingToggle.getState())
                             {
-                                robot.rgbLight.setColor(RGBColor.getColor(colorValue), 0.5, 0.5);
+                                robot.rightLight.setColor(
+                                        RGBColor.getColor(rightColorValue), 0.5, 0.5);
                             }
                             else
                             {
-                                robot.rgbLight.setColor(RGBColor.getColor(colorValue));
+                                robot.rightLight.setColor(RGBColor.getColor(rightColorValue));
                             }
                         }
                     }
@@ -265,8 +316,33 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         {
             switch (button)
             {
-                case FrcJoystick.LOGITECH_TRIGGER:
+                case FrcJoystick.SIDEWINDER_TRIGGER:
                     slowDriveOverride = pressed;
+                    break;
+
+                case FrcJoystick.SIDEWINDER_BUTTON8:
+                    if (pressed)
+                    {
+                        robot.crane.hangSequence();
+                    }
+                    break;
+
+                case FrcJoystick.SIDEWINDER_BUTTON7:
+                    if (pressed)
+                    {
+//                        robot.crane.setTilterAngle(60.0);
+//                        robot.arm.setPosition(60.0);
+                        robot.crane.setCraneLength(30.0);
+                    }
+                    break;
+
+                case FrcJoystick.SIDEWINDER_BUTTON6:
+                    if (pressed)
+                    {
+//                        robot.crane.setTilterAngle(10.0);
+//                        robot.arm.setPosition(10.0);
+                        robot.crane.setCraneLength(10.0);
+                    }
                     break;
             }
         }
@@ -317,7 +393,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON6:
                     if (pressed)
                     {
-                        robot.crane.setCranePower(-RobotInfo.CRANE_POWER);
+                        robot.crane.setCranePower(RobotInfo.CRANE_POWER);
                     }
                     else
                     {
@@ -328,7 +404,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON7:
                     if (pressed)
                     {
-                        robot.crane.setCranePower(RobotInfo.CRANE_POWER);
+                        robot.crane.setCranePower(-RobotInfo.CRANE_POWER);
                     }
                     else
                     {
@@ -354,7 +430,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON10:
                     if (pressed)
                     {
-                        robot.crane.setTilterPower(-RobotInfo.TILTER_POWER);
+                        robot.crane.setTilterPower(RobotInfo.TILTER_POWER);
                     }
                     else
                     {
@@ -365,7 +441,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON11:
                     if (pressed)
                     {
-                        robot.crane.setTilterPower(RobotInfo.TILTER_POWER);
+                        robot.crane.setTilterPower(-RobotInfo.TILTER_POWER);
                     }
                     else
                     {

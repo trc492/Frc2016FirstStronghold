@@ -17,9 +17,12 @@ public class RobotInfo
     //
     // Digital Output ports.
     //
-    public static final int DOUT_RGB_RED                = 0;
-    public static final int DOUT_RGB_GREEN              = 1;
-    public static final int DOUT_RGB_BLUE               = 2;
+    public static final int DOUT_LEFTLIGHT_RED          = 0;
+    public static final int DOUT_LEFTLIGHT_GREEN        = 1;
+    public static final int DOUT_LEFTLIGHT_BLUE         = 2;
+    public static final int DOUT_RIGHTLIGHT_RED         = 3;
+    public static final int DOUT_RIGHTLIGHT_GREEN       = 4;
+    public static final int DOUT_RIGHTLIGHT_BLUE        = 5;
 
     //
     // CAN IDs.
@@ -82,7 +85,7 @@ public class RobotInfo
     public static final double GYRO_TURN_KF             = 0.0;
     public static final double GYRO_TURN_TOLERANCE      = 1.0;
     public static final double GYRO_TURN_SETTLING       = 0.2;
-    public static final double SONAR_Y_KP               = 0.035;
+    public static final double SONAR_Y_KP               = 0.035;    //???
     public static final double SONAR_Y_KI               = 0.0;
     public static final double SONAR_Y_KD               = 0.0;
     public static final double SONAR_Y_KF               = 0.0;
@@ -98,7 +101,7 @@ public class RobotInfo
     public static final double ARM_DEGREES_PER_COUNT    = (180.0/100.0);
     public static final double ARM_CAL_POWER            = 0.5;
     public static final double ARM_SYNC_GAIN            = 0.05;
-    public static final double ARM_KP                   = 0.01;
+    public static final double ARM_KP                   = 0.02;
     public static final double ARM_KI                   = 0.0;
     public static final double ARM_KD                   = 0.0;
     public static final double ARM_KF                   = 0.0;
@@ -110,12 +113,18 @@ public class RobotInfo
     //
     // Crane subsystem.
     //
-    public static final double WINCH_INCHES_PER_COUNT   = (55.0/3983526.0);
+    public static final double WINCH_INCHES_PER_COUNT   = (50.625/3683087.0);//(50.25/741.0);
     public static final double WINCH_MAX_LENGTH         = 80.0;
+    public static final double WINCH_KP                 = 1.0;
+    public static final double WINCH_KI                 = 0.0;
+    public static final double WINCH_KD                 = 0.0;
+    public static final double WINCH_KF                 = 0.0;
+    public static final double WINCH_TOLERANCE          = 1.0;
+    public static final double WINCH_SETTLING           = 0.2;
 
-    public static final double CRANE_INCHES_PER_COUNT   = 1.0;
-    public static final double CRANE_CAL_POWER          = 0.5;
-    public static final double CRANE_POWER              = 0.75;
+    public static final double CRANE_INCHES_PER_COUNT   = (37.25/6817.0);//(38.0/7391.0);
+    public static final double CRANE_CAL_POWER          = 1.0;
+    public static final double CRANE_POWER              = 1.0;
     public static final double CRANE_SYNC_GAIN          = 0.01;
     public static final double CRANE_KP                 = 1.0;
     public static final double CRANE_KI                 = 0.0;
@@ -127,16 +136,16 @@ public class RobotInfo
     public static final double CRANE_MAX_LENGTH         = 90.0;
 
     public static final double TILTER_DEGREES_PER_COUNT = 0.001;
-    public static final double TILTER_CAL_POWER         = 0.2;
-    public static final double TILTER_POWER             = 0.25;
-    public static final double TILTER_KP                = 1.0;
+    public static final double TILTER_CAL_POWER         = 0.25;
+    public static final double TILTER_POWER             = 0.3;
+    public static final double TILTER_KP                = 0.06;
     public static final double TILTER_KI                = 0.0;
     public static final double TILTER_KD                = 0.0;
     public static final double TILTER_KF                = 0.0;
     public static final double TILTER_TOLERANCE         = 1.0;
     public static final double TILTER_SETTLING          = 0.2;
     public static final double TILTER_MIN_ANGLE         = 0.0;
-    public static final double TILTER_MAX_ANGLE         = 90.0;
+    public static final double TILTER_MAX_ANGLE         = 120.0;
 
     public static final double PICKUP_IN_POWER          = 0.5;
     public static final double PICKUP_OUT_POWER         = 1.0;

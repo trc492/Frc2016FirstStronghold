@@ -37,9 +37,9 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
 
     private static final boolean usbCameraEnabled = true;
     private static final boolean visionTargetEnabled = true;
-    private static final boolean debugDriveBase = false;
-    private static final boolean debugArm = false;
-    private static final boolean debugCrane = false;
+    private static final boolean debugDriveBase = true;
+    private static final boolean debugArm = true;
+    private static final boolean debugCrane = true;
     private static final boolean debugPidDrive = false;
     private static final boolean debugPidSonar = false;
     private static final double DASHBOARD_UPDATE_INTERVAL = 0.1;
@@ -87,7 +87,8 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     public Arm arm;
     public Crane crane;
     public FrcCANTalon pickup;
-    public FrcDigitalRGB rgbLight;
+    public FrcDigitalRGB leftLight;
+    public FrcDigitalRGB rightLight;
 
     //
     // Vision target subsystem.
@@ -286,15 +287,21 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         //
         if (RobotInfo.ENABLE_LEDS)
         {
-            rgbLight = new FrcDigitalRGB(
-                    "rgbLight",
-                    RobotInfo.DOUT_RGB_RED,
-                    RobotInfo.DOUT_RGB_GREEN,
-                    RobotInfo.DOUT_RGB_BLUE);
+            leftLight = new FrcDigitalRGB(
+                    "leftLight",
+                    RobotInfo.DOUT_LEFTLIGHT_RED,
+                    RobotInfo.DOUT_LEFTLIGHT_GREEN,
+                    RobotInfo.DOUT_LEFTLIGHT_BLUE);
+            rightLight = new FrcDigitalRGB(
+                    "rightLight",
+                    RobotInfo.DOUT_RIGHTLIGHT_RED,
+                    RobotInfo.DOUT_RIGHTLIGHT_GREEN,
+                    RobotInfo.DOUT_RIGHTLIGHT_BLUE);
         }
         else
         {
-            rgbLight = null;
+            leftLight = null;
+            rightLight = null;
         }
 
         //
@@ -400,20 +407,20 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
 
             if (debugCrane)
             {
-                crane.displayDebugInfo(4);
+                crane.displayDebugInfo(7);
             }
 
             if (debugPidDrive)
             {
-                encoderXPidCtrl.displayPidInfo(7);
-                encoderYPidCtrl.displayPidInfo(9);
-                gyroTurnPidCtrl.displayPidInfo(11);
+                encoderXPidCtrl.displayPidInfo(3);
+                encoderYPidCtrl.displayPidInfo(5);
+                gyroTurnPidCtrl.displayPidInfo(7);
             }
             else if (debugPidSonar)
             {
-                encoderXPidCtrl.displayPidInfo(7);
-                sonarYPidCtrl.displayPidInfo(9);
-                gyroTurnPidCtrl.displayPidInfo(11);
+                encoderXPidCtrl.displayPidInfo(3);
+                sonarYPidCtrl.displayPidInfo(5);
+                gyroTurnPidCtrl.displayPidInfo(7);
             }
         }
     }   //updateDashboard
@@ -428,11 +435,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
 
         if (pidCtrl == encoderXPidCtrl)
         {
-            value = driveBase.getXPosition()/RobotInfo.DRIVEBASE_X_SCALE;
+            value = driveBase.getXPosition()*RobotInfo.DRIVEBASE_X_SCALE;
         }
         else if (pidCtrl == encoderYPidCtrl)
         {
-            value = driveBase.getYPosition()/RobotInfo.DRIVEBASE_Y_SCALE;
+            value = driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE;
         }
         else if (pidCtrl == gyroTurnPidCtrl)
         {

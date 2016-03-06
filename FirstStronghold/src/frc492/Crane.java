@@ -6,13 +6,30 @@ import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
+import trclib.TrcRobot;
+import trclib.TrcStateMachine;
+import trclib.TrcTaskMgr;
+import trclib.TrcTaskMgr.TaskType;
+import trclib.TrcTimer;
 
-public class Crane implements TrcPidController.PidInput
+public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
 {		
     private static final String moduleName = "Crane";
 
+    private enum State
+    {
+        START,
+        CRANE_UP,
+        CHECK_CRANE,
+        DONE
+    }
+
     private HalDashboard dashboard = HalDashboard.getInstance();
+
     private FrcCANTalon winchMotor;
+    private TrcPidController winchPidCtrl;
+    private TrcPidMotor winchPidMotor;
+
     private FrcCANTalon craneMotor;
     private TrcPidController cranePidCtrl;
     private TrcPidMotor cranePidMotor;
@@ -20,6 +37,10 @@ public class Crane implements TrcPidController.PidInput
     private FrcCANTalon tilterMotor;
     private TrcPidController tilterPidCtrl;
     private TrcPidMotor tilterPidMotor;
+
+    private TrcStateMachine sm;
+    private TrcTimer timer;
+    private TrcEvent event;
 
     /**
      * Constructor: Create an instance of the object.
@@ -34,18 +55,29 @@ public class Crane implements TrcPidController.PidInput
         winchMotor.setInverted(true);
         winchMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
         winchMotor.reverseSensor(false);
+        winchPidCtrl = new TrcPidController(
+                moduleName,
+                RobotInfo.WINCH_KP,
+                RobotInfo.WINCH_KI,
+                RobotInfo.WINCH_KD,
+                RobotInfo.WINCH_KF,
+                RobotInfo.WINCH_TOLERANCE,
+                RobotInfo.WINCH_SETTLING,
+                this);
+        winchPidMotor = new TrcPidMotor(moduleName + ".winch", winchMotor, winchPidCtrl);
+        winchPidMotor.setPositionScale(RobotInfo.WINCH_INCHES_PER_COUNT);
 
         //
         // Crane has a motor, an encoder, lower and upper limit switches.
         // It can do full PID control.
         //
         craneMotor = new FrcCANTalon(RobotInfo.CANID_CRANE);
-        craneMotor.setInverted(false);
+        craneMotor.setInverted(true);
         craneMotor.ConfigRevLimitSwitchNormallyOpen(true);
         craneMotor.ConfigFwdLimitSwitchNormallyOpen(true);
-        craneMotor.setLimitSwitchesSwapped(false);
+        craneMotor.setLimitSwitchesSwapped(true);
         craneMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
-        craneMotor.reverseSensor(false);
+        craneMotor.reverseSensor(true);
         cranePidCtrl = new TrcPidController(
                 moduleName,
                 RobotInfo.CRANE_KP,
@@ -71,7 +103,7 @@ public class Crane implements TrcPidController.PidInput
         // It can do full PID control.
         //
         tilterMotor = new FrcCANTalon(RobotInfo.CANID_TILTER);
-        tilterMotor.setInverted(false);
+        tilterMotor.setInverted(true);
         tilterMotor.ConfigRevLimitSwitchNormallyOpen(false);
         tilterMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         tilterMotor.setLimitSwitchesSwapped(true);
@@ -87,9 +119,14 @@ public class Crane implements TrcPidController.PidInput
                 RobotInfo.TILTER_SETTLING,
                 this);
         tilterPidCtrl.setAbsoluteSetPoint(true);
+        tilterPidCtrl.setOutputRange(-0.5, 0.5);
         tilterPidMotor = new TrcPidMotor(
                 moduleName + ".tilter", tilterMotor, tilterPidCtrl);
         tilterPidMotor.setPositionScale(RobotInfo.TILTER_DEGREES_PER_COUNT);
+
+        sm = new TrcStateMachine(moduleName);
+        timer = new TrcTimer(moduleName);
+        event = new TrcEvent(moduleName);
     }
 
     public void displayDebugInfo(int lineNum)
@@ -99,14 +136,14 @@ public class Crane implements TrcPidController.PidInput
                 getTilterAngle(),
                 tilterMotor.isLowerLimitSwitchActive()? 1: 0,
                 tilterMotor.isUpperLimitSwitchActive()? 1: 0);
+        tilterPidCtrl.displayPidInfo(lineNum + 1);
         dashboard.displayPrintf(
-                lineNum + 1, "Crane: Length=%.2f, SW=%d/%d",
+                lineNum + 3, "Crane: Length=%.2f, SW=%d/%d",
                 getCraneLength(),
                 craneMotor.isLowerLimitSwitchActive()? 1: 0,
-                craneMotor.isUpperLimitSwitchActive()? 1: 0);   //???? Normal Open???
-        dashboard.displayPrintf(lineNum + 2, "Winch: Length=%.2f", getWinchLength());
-//        cranePidCtrl.displayPidInfo(lineNum + 3);
-//        tilterPidCtrl.displayPidInfo(lineNum + 5);
+                craneMotor.isUpperLimitSwitchActive()? 1: 0);
+        cranePidCtrl.displayPidInfo(lineNum + 4);
+        dashboard.displayPrintf(lineNum + 6, "Winch: Length=%.2f", getWinchLength());
     }
 
     /*
@@ -153,7 +190,7 @@ public class Crane implements TrcPidController.PidInput
     {
         cranePidMotor.setTarget(length, event, timeout);
     }
-    
+
     public void setTilterAngle(double angle)
     {
         tilterPidMotor.setTarget(angle, true);
@@ -163,7 +200,7 @@ public class Crane implements TrcPidController.PidInput
     {
         tilterPidMotor.setTarget(angle, event, timeout);
     }
-    
+
     /*
      * Accessors: Crane length, Tilter angle, limit switches
      */
@@ -171,17 +208,17 @@ public class Crane implements TrcPidController.PidInput
     {
         return cranePidMotor.getPosition();
     }
-    
+
     public double getWinchLength()
     {
         return winchMotor.getPosition()*RobotInfo.WINCH_INCHES_PER_COUNT;
     }
-    
+
     public double getTilterAngle()
     {
         return tilterPidMotor.getPosition();
     }
-    
+
     public boolean isCraneLowerLimitSwitchActive()
     {
         return craneMotor.isLowerLimitSwitchActive();
@@ -196,7 +233,26 @@ public class Crane implements TrcPidController.PidInput
     {
         return tilterMotor.isLowerLimitSwitchActive();
     }
-    
+
+    private void setTaskEnabled(boolean enabled)
+    {
+        if (enabled)
+        {
+            TrcTaskMgr.getInstance().registerTask(
+                    "hangSequence", this, TaskType.POSTCONTINUOUS_TASK);
+        }
+        else
+        {
+            TrcTaskMgr.getInstance().unregisterTask(this, TaskType.POSTCONTINUOUS_TASK);
+        }
+    }
+
+    public void hangSequence()
+    {
+        sm.start(State.START);
+        setTaskEnabled(true);
+    }
+
     /*
      * Implements TrcPidController.PidInput
      */
@@ -215,4 +271,73 @@ public class Crane implements TrcPidController.PidInput
 
         return value;
     }
+
+    //
+    // Implements TrcTaskMgr.Task
+    //
+
+    @Override
+    public void startTask(TrcRobot.RunMode runMode)
+    {
+    }   //startTask
+
+    @Override
+    public void stopTask(TrcRobot.RunMode runMode)
+    {
+    }   //stopTask
+
+    @Override
+    public void prePeriodicTask(TrcRobot.RunMode runMode)
+    {
+    }   //prePeriodicTask
+
+    @Override
+    public void postPeriodicTask(TrcRobot.RunMode runMode)
+    {
+    }   //postPeriodicTask
+
+    @Override
+    public void preContinuousTask(TrcRobot.RunMode runMode)
+    {
+    }   //preContinuousTask
+
+    @Override
+    public void postContinuousTask(TrcRobot.RunMode runMode)
+    {
+        if (sm.isReady())
+        {
+            State state = (State)sm.getState();
+
+            switch (state)
+            {
+                case START:
+                    setTilterAngle(70.0);
+                    winchMotor.setPower(1.0);
+                    timer.set(4.0, event);
+                    sm.addEvent(event);
+                    sm.waitForEvents(State.CRANE_UP);
+                    break;
+
+                case CRANE_UP:
+                    setCranePower(1.0);
+                    sm.setState(State.CHECK_CRANE);
+                    break;
+
+                case CHECK_CRANE:
+                    if (!craneMotor.isUpperLimitSwitchActive())
+                    {
+                        winchMotor.setPower(0.0);
+                        sm.setState(State.DONE);
+                    }
+                    break;
+
+                default:
+                case DONE:
+                    sm.stop();
+                    setTaskEnabled(false);
+                    break;
+            }
+        }
+    }   //postContinuousTask
+
 }   //class Crane

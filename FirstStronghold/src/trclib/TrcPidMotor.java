@@ -110,7 +110,10 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         this.instanceName = instanceName;
         this.motor1 = motor1;
         this.motor2 = motor2;
-        this.syncGain = syncGain;
+        if (motor2 != null)
+        {
+            this.syncGain = syncGain;
+        }
         this.pidCtrl = pidCtrl;
     }   //TrcPidMotor
 
@@ -291,6 +294,30 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     }   //setStallProtection
 
     /**
+     * This method enables/disable motor synchronization for a 2-motor PIDMotor.
+     *
+     * @param enabled specifies true to enable motor synchronization, false otherwise.
+     */
+    /*
+    public void setSynchEnabled(boolean enabled)
+    {
+        final String funcName = "setSyncEnabled";
+
+        if (debugEnabled)
+        {
+            dbgTrace.traceEnter(
+                    funcName, TrcDbgTrace.TraceLevel.API, "enabled=%s", Boolean.toString(enabled));
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
+        if (motor2 != null && syncGain != 0.0)
+        {
+            syncEnabled = enabled;
+        }
+    }   //setSyncEnabled
+    */
+    
+    /**
      * This method starts a PID operation by setting the PID target.
      *
      * @param target specifies the PID target.
@@ -390,13 +417,13 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * condition if reset timeout was specified.
      *
      * @param power specifies the motor power.
+     * @param syncEnabled specifies true to enable motor sync, false otherwise.
      * @param rangeLow specifies the range low limit.
      * @param rangeHigh specifies the range high limit.
-     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
      * @param stopPid specifies true to stop previous PID operation, false otherwise.
      */
     private void setPower(
-            double power, double rangeLow, double rangeHigh, boolean syncEnabled, boolean stopPid)
+            double power, boolean syncEnabled, double rangeLow, double rangeHigh, boolean stopPid)
     {
         final String funcName = "setPower";
 
@@ -487,13 +514,13 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * also check to reset the stalled condition if reset timeout was specified.
      *
      * @param power specifies the motor power.
+     * @param syncEnabled specifies true to enable motor sync, false otherwise.
      * @param rangeLow specifies the range low limit.
      * @param rangeHigh specifies the range high limit.
-     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
      */
-    public void setPower(double power, double rangeLow, double rangeHigh, boolean syncEnabled)
+    public void setPower(double power, boolean syncEnabled, double rangeLow, double rangeHigh)
     {
-        setPower(power, rangeLow, rangeHigh, syncEnabled, true);
+        setPower(power, syncEnabled, rangeLow, rangeHigh, true);
     }   //setPower
 
     /**
@@ -503,26 +530,11 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * also check to reset the stalled condition if reset timeout was specified.
      *
      * @param power specifies the motor power.
-     * @param rangeLow specifies the range low limit.
-     * @param rangeHigh specifies the range high limit.
-     */
-    public void setPower(double power, double rangeLow, double rangeHigh)
-    {
-        setPower(power, rangeLow, rangeHigh, false, true);
-    }   //setPower
-
-    /**
-     * This method sets the PID motor power. It will check for the limit switches.
-     * If activated, it won't allow the motor to go in that direction. It will also
-     * check for stalled condition and cut motor power if stalled detected. It will
-     * also check to reset the stalled condition if reset timeout was specified.
-     *
-     * @param power specifies the motor power.
-     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
+     * @param syncEnabled specifies true to enable motor sync, false otherwise.
      */
     public void setPower(double power, boolean syncEnabled)
     {
-        setPower(power, MIN_MOTOR_POWER, MAX_MOTOR_POWER, syncEnabled, true);
+        setPower(power, syncEnabled, MIN_MOTOR_POWER, MAX_MOTOR_POWER, true);
     }   //setPower
 
     /**
@@ -535,7 +547,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      */
     public void setPower(double power)
     {
-        setPower(power, MIN_MOTOR_POWER, MAX_MOTOR_POWER, false, true);
+        setPower(power, true, MIN_MOTOR_POWER, MAX_MOTOR_POWER, true);
     }   //setPower
 
     /**
@@ -670,7 +682,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * This method sets the motor power. If there are two motors, it will set both.
      *
      * @param power specifies the motor power.
-     * @param syncEnabled specifies true to enable motor synchronization, false otherwise.
+     * @param syncEnabled specifies true to enable motor sync, false otherwise.
      */
     private void setMotorPower(double power, boolean syncEnabled)
     {
@@ -940,7 +952,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 // motor power and set it.
                 //
                 motorPower = pidCtrl.getOutput();
-                setPower(motorPower, MIN_MOTOR_POWER, MAX_MOTOR_POWER, false);
+                setPower(motorPower, true, MIN_MOTOR_POWER, MAX_MOTOR_POWER, false);
             }
         }
 

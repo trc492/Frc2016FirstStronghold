@@ -168,19 +168,19 @@ public class VisionTarget
             if (debugVision)
             {
                 dashboard.displayPrintf(
-                        1, "imageWidth=%d, imageHeight=%d",
+                        8, "imageWidth=%d, imageHeight=%d",
                         targetReport.imageWidth,
                         targetReport.imageHeight);
                 dashboard.displayPrintf(
-                        2, "rectLeft=%d, rectRight=%d",
+                        9, "rectLeft=%d, rectRight=%d",
                         targetReport.rect.left,
                         targetReport.rect.left + targetReport.rect.width);
                 dashboard.displayPrintf(
-                        3, "rectTop=%d, rectBottom=%d",
+                        10, "rectTop=%d, rectBottom=%d",
                         targetReport.rect.top,
                         targetReport.rect.top + targetReport.rect.height);
                 dashboard.displayPrintf(
-                        4, "dist=%f, deltaX/Y=%4.1f/%4.1f",
+                        11, "dist=%f, deltaX/Y=%4.1f/%4.1f",
                         targetReport.distance,
                         (targetReport.rect.left + targetReport.rect.width/2.0 -
                          targetReport.imageWidth)/2.0,

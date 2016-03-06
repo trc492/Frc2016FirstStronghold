@@ -129,7 +129,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
 
     private void setTaskEnabled(boolean enabled)
     {
-        final String funcName = "setEnabled";
+        final String funcName = "setTaskEnabled";
 
         if (debugEnabled)
         {
@@ -149,7 +149,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
         }
     }   //setTaskEnabled
 
-    public int getColorValue()
+    private int getColorValue()
     {
         final String funcName = "getColorValue";
         int colorValue = 0;
@@ -183,7 +183,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
         return color;
     }   //getColor
 
-    public void setColorValue(int colorValue)
+    private void setColorValue(int colorValue)
     {
         final String funcName = "setColorValue";
 
@@ -191,12 +191,6 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API, "color=0x%x", colorValue);
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
-        }
-
-        if (sm.isEnabled())
-        {
-            timer.cancel();
-            sm.stop();
         }
 
         setRed((colorValue & COLOR_RED) != 0);
@@ -212,6 +206,12 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API, "color=%s", color.toString());
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
+        if (sm.isEnabled())
+        {
+            timer.cancel();
+            sm.stop();
         }
 
         setColorValue(color.getValue());
@@ -300,7 +300,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
             switch (state)
             {
                 case TURN_ON:
-                    setColor(color);
+                    setColorValue(color.getValue());
                     if (onPeriod != 0.0)
                     {
                         timer.set(onPeriod, timerEvent);
@@ -314,7 +314,7 @@ public abstract class TrcRGBLight implements TrcTaskMgr.Task
                     break;
 
                 case TURN_OFF:
-                    setColor(RGBColor.RGB_BLACK);
+                    setColorValue(COLOR_BLACK);
                     if (offPeriod != 0.0)
                     {
                         timer.set(offPeriod, timerEvent);

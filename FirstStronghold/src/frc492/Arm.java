@@ -55,16 +55,23 @@ public class Arm implements TrcPidController.PidInput
         pidMotor.setPositionScale(RobotInfo.ARM_DEGREES_PER_COUNT);
     }
 
+    public void traceDebugInfo(TrcDbgTrace tracer)
+    {
+        pidCtrl.printPidInfo(tracer);
+    }
+
     public void displayDebugInfo(int lineNum)
     {
         dashboard.displayPrintf(
-                lineNum, "Arm: lPos=%.2f, rPos=%.2f, lSW=%d/%d, rSW=%d/%d",
-                leftMotor.getPosition(), rightMotor.getPosition(),
+                lineNum, "Arm: lPos=%.2f, rPos=%.2f",
+                leftMotor.getPosition(), rightMotor.getPosition());
+        dashboard.displayPrintf(
+                lineNum + 1, "Arm: lSW=%d/%d, rSW=%d/%d",
                 leftMotor.isLowerLimitSwitchActive()? 1: 0,
                 leftMotor.isUpperLimitSwitchActive()? 1: 0,
                 rightMotor.isLowerLimitSwitchActive()? 1: 0,
                 rightMotor.isUpperLimitSwitchActive()? 1: 0);
-//        pidCtrl.displayPidInfo(lineNum);
+        pidCtrl.displayPidInfo(lineNum + 2);
     }
 
     public void setPosition(double position)
