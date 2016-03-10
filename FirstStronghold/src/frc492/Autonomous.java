@@ -45,6 +45,9 @@ public class Autonomous implements TrcRobot.RobotMode
     public void startMode()
     {
         robot.arm.zeroCalibrate();
+        robot.crane.zeroCalibrateTilter();
+        robot.crane.zeroCalibarateCrane();
+        robot.driveBase.resetPosition();
 
         AutoMode selectedAutoMode = (AutoMode)(autoChooser.getSelected());
         switch (selectedAutoMode)
@@ -91,7 +94,6 @@ public class Autonomous implements TrcRobot.RobotMode
 
     public void runPeriodic(double elapsedTime)
     {
-        robot.updateDashboard();
     }   //runPeriodic
 
     public void runContinuous(double elapsedTime)

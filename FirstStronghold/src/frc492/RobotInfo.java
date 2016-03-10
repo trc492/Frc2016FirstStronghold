@@ -107,20 +107,25 @@ public class RobotInfo
     public static final double ARM_KF                   = 0.0;
     public static final double ARM_TOLERANCE            = 1.0;
     public static final double ARM_SETTLING             = 0.2;
-    public static final double ARM_UP_POSITION          = 0.0;
-    public static final double ARM_DOWN_POSITION        = 44.5;
+    public static final double ARM_MIN_POSITION         = 0.0;
+    public static final double ARM_MAX_POSITION         = 180.0;
+    public static final double ARM_UP_POSITION          = ARM_MIN_POSITION;
+    public static final double ARM_OUT_POSITION         = 90.0;
+    public static final double ARM_GROUND_POSITION      = 120.0;
+    public static final double ARM_DOWN_POSITION        = ARM_MAX_POSITION;
  
     //
     // Crane subsystem.
     //
     public static final double WINCH_INCHES_PER_COUNT   = (50.625/3683087.0);//(50.25/741.0);
-    public static final double WINCH_MAX_LENGTH         = 80.0;
+    public static final double WINCH_POWER              = 1.0;
     public static final double WINCH_KP                 = 1.0;
     public static final double WINCH_KI                 = 0.0;
     public static final double WINCH_KD                 = 0.0;
     public static final double WINCH_KF                 = 0.0;
     public static final double WINCH_TOLERANCE          = 1.0;
     public static final double WINCH_SETTLING           = 0.2;
+    public static final double WINCH_MAX_LENGTH         = 80.0;
 
     public static final double CRANE_INCHES_PER_COUNT   = (37.25/6817.0);//(38.0/7391.0);
     public static final double CRANE_CAL_POWER          = 1.0;
@@ -138,6 +143,7 @@ public class RobotInfo
     public static final double TILTER_DEGREES_PER_COUNT = 0.001;
     public static final double TILTER_CAL_POWER         = 0.25;
     public static final double TILTER_POWER             = 0.3;
+    public static final double TILTER_POWER_LIMIT       = 0.3;
     public static final double TILTER_KP                = 0.06;
     public static final double TILTER_KI                = 0.0;
     public static final double TILTER_KD                = 0.0;
@@ -149,4 +155,19 @@ public class RobotInfo
 
     public static final double PICKUP_IN_POWER          = 0.5;
     public static final double PICKUP_OUT_POWER         = 1.0;
+
+    //
+    // Autonomous parameters.
+    //
+    public static final String AUTOKEY_DISTANCE_TO_DEFENSE      = "DistanceToDefense";
+    public static final double AUTO_DISTANCE_TO_DEFENSE         = 50.0;
+    public static final String AUTOKEY_DISTANCE_OVER_DEFENSE    = "DistanceOverDefesne";
+    public static final double AUTO_DISTANCE_OVER_DEFENSE       = 125.0;
+    public static final String AUTOKEY_DISTANCE_TO_TOWER        = "DistanceToTower";
+    public static final double AUTO_DISTANCE_TO_TOWER           = 205.0;
+    public static final String AUTOKEY_TURN_TO_TOWER            = "TurnToTower";
+    public static final double AUTO_TURN_TO_TOWER               = 60.0;
+    public static final String AUTOKEY_DISTANCE_TO_GOAL         = "DistanceToGoal";
+    public static final double AUTO_DISTANCE_TO_GOAL            = 138.0;
+
 }   //class RobotInfo

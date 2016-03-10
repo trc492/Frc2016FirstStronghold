@@ -117,13 +117,14 @@ public class TrcDriveBase extends HalRobotDrive implements TrcTaskMgr.Task
         this(null, leftMotor, null, rightMotor, null);
     }   //TrcDriveBase
 
-    public void resetPosition()
+    public void resetEncoderPosition()
     {
-        final String funcName = "resetPosition";
+        final String funcName = "resetEncoderPosition";
 
         if (debugEnabled)
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
         if (leftFrontMotor != null)
@@ -146,23 +147,44 @@ public class TrcDriveBase extends HalRobotDrive implements TrcTaskMgr.Task
             rightRearMotor.resetPosition();
         }
 
+        xPos = 0.0;
+        yPos = 0.0;
+        rotPos = 0.0;
+        xSpeed = 0.0;
+        ySpeed = 0.0;
+    }   //resetEncoderPosition
+
+    public void resetHeading()
+    {
+        final String funcName = "resetHeading";
+
+        if (debugEnabled)
+        {
+            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
         if (gyro != null)
         {
             gyro.resetZIntegrator();
         }
 
-        xPos = 0.0;
-        yPos = 0.0;
-        rotPos = 0.0;
         heading = 0.0;
-        xSpeed = 0.0;
-        ySpeed = 0.0;
         turnSpeed = 0.0;
+    }   //resetHeading
+
+    public void resetPosition()
+    {
+        final String funcName = "resetPosition";
 
         if (debugEnabled)
         {
+            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
+
+        resetEncoderPosition();
+        resetHeading();
     }   //resetPosition
 
     public void setXPositionScale(double scale)

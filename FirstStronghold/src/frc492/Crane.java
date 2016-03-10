@@ -6,24 +6,10 @@ import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
-import trclib.TrcRobot;
-import trclib.TrcStateMachine;
-import trclib.TrcTaskMgr;
-import trclib.TrcTaskMgr.TaskType;
-import trclib.TrcTimer;
 
-public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
+public class Crane implements TrcPidController.PidInput
 {		
     private static final String moduleName = "Crane";
-
-    private enum State
-    {
-        START,
-        CRANE_UP,
-        CHECK_CRANE,
-        DONE
-    }
-
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private FrcCANTalon winchMotor;
@@ -37,10 +23,6 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
     private FrcCANTalon tilterMotor;
     private TrcPidController tilterPidCtrl;
     private TrcPidMotor tilterPidMotor;
-
-    private TrcStateMachine sm;
-    private TrcTimer timer;
-    private TrcEvent event;
 
     /**
      * Constructor: Create an instance of the object.
@@ -89,13 +71,6 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
                 this);
         cranePidCtrl.setAbsoluteSetPoint(true);
         cranePidMotor = new TrcPidMotor(moduleName + ".crane", craneMotor, cranePidCtrl);
-        /*
-        cranePidMotor = new TrcPidMotor(
-                moduleName + ".crane",
-                craneMotor, winchMotor,
-                RobotInfo.CRANE_SYNC_GAIN, cranePidCtrl);
-        */
-        //??? What to do about the encoder scale difference between crane and winch motors???
         cranePidMotor.setPositionScale(RobotInfo.CRANE_INCHES_PER_COUNT);
 
         //
@@ -119,14 +94,10 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
                 RobotInfo.TILTER_SETTLING,
                 this);
         tilterPidCtrl.setAbsoluteSetPoint(true);
-        tilterPidCtrl.setOutputRange(-0.5, 0.5);
+        tilterPidCtrl.setOutputRange(-RobotInfo.TILTER_POWER_LIMIT, RobotInfo.TILTER_POWER_LIMIT);
         tilterPidMotor = new TrcPidMotor(
                 moduleName + ".tilter", tilterMotor, tilterPidCtrl);
         tilterPidMotor.setPositionScale(RobotInfo.TILTER_DEGREES_PER_COUNT);
-
-        sm = new TrcStateMachine(moduleName);
-        timer = new TrcTimer(moduleName);
-        event = new TrcEvent(moduleName);
     }
 
     public void displayDebugInfo(int lineNum)
@@ -164,8 +135,7 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
      */
     public void setCranePower(double power)
     {
-        craneMotor.setPower(power);
-//        cranePidMotor.setPower(power);
+        cranePidMotor.setPower(power);
     }
 
     public void setWinchPower(double power)
@@ -234,25 +204,6 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
         return tilterMotor.isLowerLimitSwitchActive();
     }
 
-    private void setTaskEnabled(boolean enabled)
-    {
-        if (enabled)
-        {
-            TrcTaskMgr.getInstance().registerTask(
-                    "hangSequence", this, TaskType.POSTCONTINUOUS_TASK);
-        }
-        else
-        {
-            TrcTaskMgr.getInstance().unregisterTask(this, TaskType.POSTCONTINUOUS_TASK);
-        }
-    }
-
-    public void hangSequence()
-    {
-        sm.start(State.START);
-        setTaskEnabled(true);
-    }
-
     /*
      * Implements TrcPidController.PidInput
      */
@@ -268,76 +219,12 @@ public class Crane implements TrcPidController.PidInput, TrcTaskMgr.Task
         {
             value = getTilterAngle();
         }
+        else if (pidCtrl == this.winchPidCtrl)
+        {
+            value = getWinchLength();
+        }
 
         return value;
     }
-
-    //
-    // Implements TrcTaskMgr.Task
-    //
-
-    @Override
-    public void startTask(TrcRobot.RunMode runMode)
-    {
-    }   //startTask
-
-    @Override
-    public void stopTask(TrcRobot.RunMode runMode)
-    {
-    }   //stopTask
-
-    @Override
-    public void prePeriodicTask(TrcRobot.RunMode runMode)
-    {
-    }   //prePeriodicTask
-
-    @Override
-    public void postPeriodicTask(TrcRobot.RunMode runMode)
-    {
-    }   //postPeriodicTask
-
-    @Override
-    public void preContinuousTask(TrcRobot.RunMode runMode)
-    {
-    }   //preContinuousTask
-
-    @Override
-    public void postContinuousTask(TrcRobot.RunMode runMode)
-    {
-        if (sm.isReady())
-        {
-            State state = (State)sm.getState();
-
-            switch (state)
-            {
-                case START:
-                    setTilterAngle(70.0);
-                    winchMotor.setPower(1.0);
-                    timer.set(4.0, event);
-                    sm.addEvent(event);
-                    sm.waitForEvents(State.CRANE_UP);
-                    break;
-
-                case CRANE_UP:
-                    setCranePower(1.0);
-                    sm.setState(State.CHECK_CRANE);
-                    break;
-
-                case CHECK_CRANE:
-                    if (!craneMotor.isUpperLimitSwitchActive())
-                    {
-                        winchMotor.setPower(0.0);
-                        sm.setState(State.DONE);
-                    }
-                    break;
-
-                default:
-                case DONE:
-                    sm.stop();
-                    setTaskEnabled(false);
-                    break;
-            }
-        }
-    }   //postContinuousTask
 
 }   //class Crane

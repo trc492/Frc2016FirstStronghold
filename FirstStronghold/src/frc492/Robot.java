@@ -36,7 +36,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     private TrcDbgTrace dbgTrace = FrcRobotBase.getRobotTracer();
 
     private static final boolean usbCameraEnabled = true;
-    private static final boolean visionTargetEnabled = true;
+    private static final boolean visionTargetEnabled = false;
     private static final boolean debugDriveBase = true;
     private static final boolean debugArm = true;
     private static final boolean debugCrane = true;
@@ -199,6 +199,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         rightFrontMotor.setInverted(true);
         rightRearMotor.setInverted(true);
 
+        leftFrontMotor.setVoltageRampRate(10.0);
+        leftRearMotor.setVoltageRampRate(10.0);
+        rightFrontMotor.setVoltageRampRate(10.0);
+        rightRearMotor.setVoltageRampRate(10.0);
+
         leftFrontMotor.setPositionSensorInverted(true);
         leftRearMotor.setPositionSensorInverted(true);
         rightFrontMotor.setPositionSensorInverted(false);
@@ -231,6 +236,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 RobotInfo.ENCODER_X_TOLERANCE,
                 RobotInfo.ENCODER_X_SETTLING,
                 this);
+        encoderXPidCtrl.setAbsoluteSetPoint(true);
         encoderYPidCtrl = new TrcPidController(
                 "encoderYPidCtrl",
                 RobotInfo.ENCODER_Y_KP,
@@ -240,6 +246,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 RobotInfo.ENCODER_Y_TOLERANCE,
                 RobotInfo.ENCODER_Y_SETTLING,
                 this);
+        encoderYPidCtrl.setAbsoluteSetPoint(true);
         gyroTurnPidCtrl = new TrcPidController(
                 "gyroTurnPidCtrl",
                 RobotInfo.GYRO_TURN_KP,
@@ -249,6 +256,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 RobotInfo.GYRO_TURN_TOLERANCE,
                 RobotInfo.GYRO_TURN_SETTLING,
                 this);
+        gyroTurnPidCtrl.setAbsoluteSetPoint(true);
         pidDrive = new TrcPidDrive(
                 "pidDrive", driveBase, encoderXPidCtrl, encoderYPidCtrl, gyroTurnPidCtrl);
 
@@ -262,7 +270,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                 RobotInfo.SONAR_Y_SETTLING,
                 this);
         sonarYPidCtrl.setAbsoluteSetPoint(true);
-        sonarYPidCtrl.setInverted(true);;
+        sonarYPidCtrl.setInverted(true);
         sonarPidDrive = new TrcPidDrive(
                 "sonarPidDrive", driveBase,
                 encoderXPidCtrl, sonarYPidCtrl, gyroTurnPidCtrl);
@@ -307,9 +315,12 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         //
         // Vision subsystem.
         //
-        if (visionTargetEnabled && cameraServer != null)
+        if (visionTargetEnabled)
         {
-            visionTarget = new VisionTarget(this);
+            if (cameraServer != null)
+            {
+                visionTarget = new VisionTarget(this);
+            }
         }
         else
         {
