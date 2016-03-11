@@ -1,7 +1,6 @@
 package frclib;
 
 import edu.wpi.first.wpilibj.AnalogGyro;
-import edu.wpi.first.wpilibj.AnalogInput;
 import hallib.HalGyro;
 import hallib.HalUtil;
 import trclib.TrcSensor.SensorData;
