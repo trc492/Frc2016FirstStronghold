@@ -94,7 +94,8 @@ public class Crane implements TrcPidController.PidInput
                 RobotInfo.TILTER_SETTLING,
                 this);
         tilterPidCtrl.setAbsoluteSetPoint(true);
-        tilterPidCtrl.setOutputRange(-RobotInfo.TILTER_POWER_LIMIT, RobotInfo.TILTER_POWER_LIMIT);
+        tilterPidCtrl.setOutputRange(
+                RobotInfo.TILTER_DOWN_POWER_LIMIT, RobotInfo.TILTER_UP_POWER_LIMIT);
         tilterPidMotor = new TrcPidMotor(
                 moduleName + ".tilter", tilterMotor, tilterPidCtrl);
         tilterPidMotor.setPositionScale(RobotInfo.TILTER_DEGREES_PER_COUNT);

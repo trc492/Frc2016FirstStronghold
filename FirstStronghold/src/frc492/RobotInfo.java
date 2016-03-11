@@ -143,7 +143,8 @@ public class RobotInfo
     public static final double TILTER_DEGREES_PER_COUNT = 0.001;
     public static final double TILTER_CAL_POWER         = 0.25;
     public static final double TILTER_POWER             = 0.3;
-    public static final double TILTER_POWER_LIMIT       = 0.3;
+    public static final double TILTER_DOWN_POWER_LIMIT  = -0.3;
+    public static final double TILTER_UP_POWER_LIMIT    = 0.5;
     public static final double TILTER_KP                = 0.06;
     public static final double TILTER_KI                = 0.0;
     public static final double TILTER_KD                = 0.0;
