@@ -23,6 +23,7 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
     
     private enum State
     {
+        TEST,
         DRIVE_TO_DEFENSE,
         DRIVE_OVER_DEFENSE,
         DRIVE_TO_TOWER,
@@ -73,6 +74,13 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
 
             switch (state)
             {
+                case TEST:
+                    robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
+                    robot.pidDrive.setTarget(0.0, 96.0, 0.0, false, event);
+                    sm.addEvent(event);
+                    sm.waitForEvents(State.DONE);
+                    break;
+
                 case DRIVE_TO_DEFENSE:
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
                     robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);

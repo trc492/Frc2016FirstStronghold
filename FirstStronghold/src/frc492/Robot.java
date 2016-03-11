@@ -51,6 +51,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     // Sensors.
     //
     private FrcADXRS450Gyro gyro;
+//    private FrcAnalogGyro gyro;
 //    private TrcAnalogInput sonar;
 //    private TrcKalmanFilter sonarFilter;
 
@@ -146,6 +147,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         // Sensors.
         //
         gyro = new FrcADXRS450Gyro();
+//        gyro = new FrcAnalogGyro(0);
         /*
         sonar = new TrcAnalogInput(
                         "frontSonar",
