@@ -17,17 +17,19 @@ public class AutoPortcullis implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToDefense;
-    private double distanceOverDefense;
+    private double distanceToPortcullis;
+    private double armOutPosition;
+    private double distanceThroughPortcullis;
+    private double distanceUnderPortcullis;
     private TrcStateMachine sm;
     private TrcEvent event;
 
     // state machine
     private enum State
     {
-        DRIVE_TO_DEFENSE,
-        DRIVE_TO_PORT,
-        DRIVE_UNDER_PORT,
+        DRIVE_TO_PORTCULLIS,
+        THROUGH_PORTCULLIS,
+        UNDER_PORTCULLIS,
         DONE
     }
 
@@ -35,13 +37,18 @@ public class AutoPortcullis implements AutoStrategy
     public AutoPortcullis (Robot robot)
     {
         this.robot = robot;
-        distanceToDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_DEFENSE, RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceOverDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_OVER_DEFENSE, RobotInfo.AUTO_DISTANCE_OVER_DEFENSE);
+        distanceToPortcullis = HalDashboard.getNumber(
+                "DistanceToPortcullis", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        armOutPosition = HalDashboard.getNumber(
+                "ArmOutPosition", RobotInfo.ARM_OUT_POSITION);
+        distanceThroughPortcullis = HalDashboard.getNumber(
+                "DistanceThroughPortcullis", distanceToPortcullis + 20.0);
+        distanceUnderPortcullis = HalDashboard.getNumber(
+                "DistanceUnderPortcullis", distanceToPortcullis + 60.0);
+
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
-        sm.start(State.DRIVE_TO_DEFENSE);
+        sm.start(State.DRIVE_TO_PORTCULLIS);
     }
 
     public void autoPeriodic(double elapsedTime)
@@ -59,34 +66,34 @@ public class AutoPortcullis implements AutoStrategy
             state = (State) sm.getState();
             switch (state)
             {
-                case DRIVE_TO_DEFENSE:
+                case DRIVE_TO_PORTCULLIS:
                     //
                     // drive up to the defense full speed, lower arms
                     //
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
-                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                    robot.pidDrive.setTarget(0.0, distanceToPortcullis, 0.0, false, event, 2.0);
+                    robot.arm.setPosition(armOutPosition);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.DRIVE_TO_PORT);
+                    sm.waitForEvents(State.THROUGH_PORTCULLIS);
                     break;
 
-                case DRIVE_TO_PORT:
+                case THROUGH_PORTCULLIS:
                     //
                     // drive to the portcullis at 30% speed
                     //
                     robot.encoderYPidCtrl.setOutputRange(-.3, .3);
-                    robot.pidDrive.setTarget(0.0, distanceToDefense + 20.0, 0.0, false, event, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceThroughPortcullis, 0.0, false, event, 2.0);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.DRIVE_UNDER_PORT);
+                    sm.waitForEvents(State.UNDER_PORTCULLIS);
                     break;
 
-                case DRIVE_UNDER_PORT:
+                case UNDER_PORTCULLIS:
                     //
                     // lift the gate and drive slowly under the port at 50% power
                     //
                     robot.encoderYPidCtrl.setOutputRange(-.5, .5);
                     robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
-                    robot.pidDrive.setTarget(0.0, distanceOverDefense, 0, false, event, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceUnderPortcullis, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

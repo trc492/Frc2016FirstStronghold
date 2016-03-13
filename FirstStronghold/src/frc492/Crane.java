@@ -104,10 +104,10 @@ public class Crane implements TrcPidController.PidInput
     public void displayDebugInfo(int lineNum)
     {
         dashboard.displayPrintf(
-                lineNum, "Tilter: Angle=%.2f, SW=%d/%d",
+                lineNum, "Tilter: Angle=%.2f, SW=%d/%d, Enc=%.0f",
                 getTilterAngle(),
                 tilterMotor.isLowerLimitSwitchActive()? 1: 0,
-                tilterMotor.isUpperLimitSwitchActive()? 1: 0);
+                tilterMotor.isUpperLimitSwitchActive()? 1: 0, tilterMotor.getPosition());
         tilterPidCtrl.displayPidInfo(lineNum + 1);
         dashboard.displayPrintf(
                 lineNum + 3, "Crane: Length=%.2f, SW=%d/%d",

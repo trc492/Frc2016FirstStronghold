@@ -11,30 +11,33 @@ public class AutoTeeterTotter implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToDefense;
-    private double distanceOverDefense;
+    private double distanceToTeeterTotter;
+    private double distanceApproachTeeterTotter;
+    private double distanceOverTeeterTotter;
     private TrcStateMachine sm;
     private TrcEvent event;
 
     public enum State
     {
-        DRIVE_TO_DEFENSE,
         DRIVE_TO_TEETER_TOTTER,
+        APPROACH_TEETER_TOTTER,
         LOWER_ARMS,
-        DRIVE_OVER_DEFENSE,
+        OVER_TEETER_TOTTER,
         DONE
     }
 
     public AutoTeeterTotter(Robot robot)
     {
         this.robot = robot;
-        distanceToDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_DEFENSE, RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceOverDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_OVER_DEFENSE, RobotInfo.AUTO_DISTANCE_OVER_DEFENSE);
+        distanceToTeeterTotter = HalDashboard.getNumber(
+                "DistanceToTeeterTotter", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceApproachTeeterTotter = HalDashboard.getNumber(
+                "DistanceApproachTeeterTotter", distanceToTeeterTotter + 20.0);
+        distanceOverTeeterTotter = HalDashboard.getNumber(
+                "DistanceOverTeeterTotter", distanceToTeeterTotter + 68.0);
         sm = new TrcStateMachine (moduleName);
         event = new TrcEvent (moduleName);
-        sm.start(State.DRIVE_TO_DEFENSE);
+        sm.start(State.DRIVE_TO_TEETER_TOTTER);
     }
 
     public void autoPeriodic(double elapsedTime) 
@@ -53,29 +56,30 @@ public class AutoTeeterTotter implements AutoStrategy
 
             switch(state)
             {
-                case DRIVE_TO_DEFENSE:
+                case DRIVE_TO_TEETER_TOTTER:
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0, false, event, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceToTeeterTotter, 0, false, event, 2.0);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.DRIVE_TO_TEETER_TOTTER);
+                    sm.waitForEvents(State.APPROACH_TEETER_TOTTER);
                     break;
 
-                case DRIVE_TO_TEETER_TOTTER:
+                case APPROACH_TEETER_TOTTER:
                     robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
-                    robot.pidDrive.setTarget(0.0, distanceToDefense + 20.0, 0, false, event, 2.0);
+                    robot.pidDrive.setTarget(
+                            0.0, distanceToTeeterTotter + 20.0, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.LOWER_ARMS);
                     break;
 
                 case LOWER_ARMS:
-                    robot.arm.setPosition(RobotInfo.ARM_GROUND_POSITION, event, 0.0);
+                    robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 0.0);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.DRIVE_OVER_DEFENSE);
+                    sm.waitForEvents(State.OVER_TEETER_TOTTER);
                     break;
 
-                case DRIVE_OVER_DEFENSE:
-                    robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
-                    robot.pidDrive.setTarget(0.0, distanceOverDefense, false, event, 5.0);
+                case OVER_TEETER_TOTTER:
+                    robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
+                    robot.pidDrive.setTarget(0.0, distanceOverTeeterTotter, false, event, 5.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

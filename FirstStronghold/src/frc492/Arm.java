@@ -55,6 +55,24 @@ public class Arm implements TrcPidController.PidInput
         pidMotor.setPositionScale(RobotInfo.ARM_DEGREES_PER_COUNT);
     }
 
+    public void setLimitSwitchesEnabled(boolean enabled)
+    {
+        if (enabled)
+        {
+            leftMotor.enableLimitSwitch (true, true);
+            rightMotor.enableLimitSwitch(true, true);
+            leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
+            rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
+            leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+            rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+        }
+        else
+        {
+            leftMotor.enableLimitSwitch (false, false);
+            rightMotor.enableLimitSwitch(false, false);
+        }
+    }
+
     public void traceDebugInfo(TrcDbgTrace tracer)
     {
         pidCtrl.printPidInfo(tracer);

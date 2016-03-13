@@ -16,7 +16,7 @@ public class AutoMoat implements TrcRobot.AutoStrategy
 
     private enum State
     {
-        DRIVE_OVER_DEFENSE,
+        DRIVE_OVER_MOAT,
         DONE
     }
 
@@ -25,7 +25,7 @@ public class AutoMoat implements TrcRobot.AutoStrategy
         this.robot = robot;
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
-        sm.start(State.DRIVE_OVER_DEFENSE);
+        sm.start(State.DRIVE_OVER_MOAT);
      }   //Autonomous
 
     //
@@ -49,9 +49,10 @@ public class AutoMoat implements TrcRobot.AutoStrategy
 
             switch (state)
             {
-                case DRIVE_OVER_DEFENSE:
+                case DRIVE_OVER_MOAT:
                     robot.encoderYPidCtrl.setOutputRange(-0.6, 0.6);
-                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event); // 12 feet
+                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event);
+                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

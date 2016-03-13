@@ -17,19 +17,20 @@ public class AutoRamparts implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToDefense;
+    private double distanceToRamparts;
+    private double distanceApproachRamparts;
+    private double distanceOverRamparts;
     private TrcStateMachine sm;
     private TrcEvent event;
 
     // state machine
     private enum State
     {
-        DRIVE_TO_DEFENSE,
         DRIVE_TO_RAMPARTS,
+        APPROACH_RAMPARTS,
         LOWER_ARMS,
-        DRIVE_FWD,
+        OVER_RAMPARTS,
         RAISE_ARMS,
-        DRIVE_OVER_RAMPARTS,
         DONE
     }
 
@@ -37,11 +38,15 @@ public class AutoRamparts implements AutoStrategy
     public AutoRamparts (Robot robot)
     {
         this.robot = robot;
-        distanceToDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_DEFENSE, RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        sm.start(State.DRIVE_TO_DEFENSE);
-        event = new TrcEvent(moduleName);
+        distanceToRamparts = HalDashboard.getNumber(
+                "DistanceToRamparts", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceApproachRamparts = HalDashboard.getNumber(
+                "DistanceCrossRamparts", distanceToRamparts + 20.0);
+        distanceOverRamparts = HalDashboard.getNumber(
+                "DistanceOverRamparts", distanceToRamparts + 60.0);
         sm = new TrcStateMachine(moduleName);
+        event = new TrcEvent(moduleName);
+        sm.start(State.DRIVE_TO_RAMPARTS);
     }
 
     public void autoPeriodic(double elapsedTime)
@@ -60,22 +65,23 @@ public class AutoRamparts implements AutoStrategy
 
             switch(state)
             {
-            case DRIVE_TO_DEFENSE:
+            case DRIVE_TO_RAMPARTS:
                 /*
                  * drive to defense fast, put arms up
                  */
                 robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
+                robot.pidDrive.setTarget(0.0, distanceToRamparts, 0.0, false, event, 2.0);
+                robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
                 sm.addEvent(event);
-                sm.waitForEvents(State.DRIVE_TO_RAMPARTS);
+                sm.waitForEvents(State.APPROACH_RAMPARTS);
                 break;
 
-            case DRIVE_TO_RAMPARTS:
+            case APPROACH_RAMPARTS:
                 /*
                  * drive forward to the ramparts slowly
                  */
                 robot.encoderYPidCtrl.setOutputRange(-.3, .3);
-                robot.pidDrive.setTarget(0.0, distanceToDefense + 20.0, 0.0, false, event, 2.0);
+                robot.pidDrive.setTarget(0.0, distanceApproachRamparts, 0.0, false, event, 2.0);
                 sm.addEvent(event);
                 sm.waitForEvents(State.LOWER_ARMS);
                 break;
@@ -86,32 +92,14 @@ public class AutoRamparts implements AutoStrategy
                  */
                 robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 1.0);
                 sm.addEvent(event);
-                sm.waitForEvents(State.DRIVE_FWD);
+                sm.waitForEvents(State.OVER_RAMPARTS);
                 break;
 
-            case DRIVE_FWD:
+            case OVER_RAMPARTS:
                 /*
                  * drive over ramparts 30%
                  */
-                robot.pidDrive.setTarget(0.0, distanceToDefense + 40.0, 0.0, false, event, 1.0);
-                sm.addEvent(event);
-                sm.waitForEvents(State.RAISE_ARMS);
-                break;
-
-            case RAISE_ARMS:
-                /*
-                 * raise arms
-                 */
-                robot.arm.setPosition(RobotInfo.ARM_UP_POSITION, event, 1.0);
-                sm.addEvent(event);
-                sm.waitForEvents(State.DRIVE_OVER_RAMPARTS);
-                break;
-
-            case DRIVE_OVER_RAMPARTS:
-                /*
-                 * drive over and past the ramparts
-                 */
-                robot.pidDrive.setTarget(0.0, distanceToDefense + 80.0, 0.0, false, event, 2.0);
+                robot.pidDrive.setTarget(0.0, distanceOverRamparts, 0.0, false, event, 1.0);
                 sm.addEvent(event);
                 sm.waitForEvents(State.DONE);
                 break;
@@ -121,6 +109,7 @@ public class AutoRamparts implements AutoStrategy
                 //
                 // stop
                 //
+                robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
                 sm.stop();
                 break;
             }

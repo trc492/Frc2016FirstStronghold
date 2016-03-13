@@ -183,6 +183,29 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_TRIGGER:
                     break;
     
+                case FrcJoystick.LOGITECH_BUTTON2:
+                    if (pressed)
+                    {
+                        robot.pickup.set(RobotInfo.PICKUP_IN_POWER);
+                    }
+                    else
+                    {
+                        robot.pickup.set(0.0);
+                    }
+                    break;
+
+                case FrcJoystick.LOGITECH_BUTTON3:
+                    if (pressed)
+                    {
+                        robot.pickup.set(RobotInfo.PICKUP_OUT_POWER);
+                    }
+                    else
+                    {
+                        robot.pickup.set(0.0);
+                    }
+                    break;
+
+                /*
                 case FrcJoystick.LOGITECH_BUTTON3:
                     if (pressed)
                     {
@@ -203,6 +226,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                         driveMode = DriveMode.ARCADE_MODE;
                     }
                     break;
+                    */
 
                 case FrcJoystick.LOGITECH_BUTTON6:
                     if (robot.leftLight != null)
@@ -319,6 +343,22 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.SIDEWINDER_TRIGGER:
                     slowDriveOverride = pressed;
                     break;
+
+                case FrcJoystick.SIDEWINDER_BUTTON6:
+                    if(pressed)
+                    {
+                        robot.crane.setTilterAngle(20);
+                    }
+
+                    break;
+
+                case FrcJoystick.SIDEWINDER_BUTTON8:
+                    if(pressed)
+                    {
+                        robot.crane.setTilterAngle(90);
+                    }
+
+                    break;
             }
         }
         else if (joystick == operatorStick)
@@ -327,6 +367,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             {
                 case FrcJoystick.LOGITECH_TRIGGER:
                     syncArmEnabled = !pressed;
+                    robot.arm.setLimitSwitchesEnabled(!pressed);
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON2:
@@ -343,7 +384,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON3:
                     if (pressed)
                     {
-                        robot.pickup.set(-RobotInfo.PICKUP_OUT_POWER);
+                        robot.pickup.set(RobotInfo.PICKUP_OUT_POWER);
                     }
                     else
                     {

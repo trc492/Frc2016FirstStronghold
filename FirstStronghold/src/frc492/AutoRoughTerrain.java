@@ -23,6 +23,7 @@ public class AutoRoughTerrain implements TrcRobot.AutoStrategy
     public AutoRoughTerrain(Robot robot)
     {
         this.robot = robot;
+        
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
         sm.start(State.DRIVE_OVER_DEFENSE);
@@ -51,7 +52,8 @@ public class AutoRoughTerrain implements TrcRobot.AutoStrategy
             {
                 case DRIVE_OVER_DEFENSE:
                     robot.encoderYPidCtrl.setOutputRange(-0.7, 0.7);
-                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event); // 12 feet
+                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event);
+                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);// 12 feet
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

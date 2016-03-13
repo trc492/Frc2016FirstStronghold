@@ -12,8 +12,8 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToDefense;
-    private double distanceOverDefense;
+    private double distanceToLowBar;
+    private double distanceCrossLowBar;
     private double distanceToTower;
     private double turnToTower;
     private double distanceToGoal;
@@ -23,9 +23,8 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
     
     private enum State
     {
-        TEST,
-        DRIVE_TO_DEFENSE,
-        DRIVE_OVER_DEFENSE,
+        DRIVE_TO_LOWBAR,
+        CROSS_LOWBAR,
         DRIVE_TO_TOWER,
         TURN_TO_TOWER,
         DRIVE_TO_GOAL,
@@ -36,22 +35,18 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
     public AutoLowBar(Robot robot)
     {
         this.robot = robot;
-        distanceToDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_DEFENSE, RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceOverDefense = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_OVER_DEFENSE, RobotInfo.AUTO_DISTANCE_OVER_DEFENSE);
-        distanceToTower = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_TOWER, RobotInfo.AUTO_DISTANCE_TO_TOWER);
-        turnToTower = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_TURN_TO_TOWER, RobotInfo.AUTO_TURN_TO_TOWER);
-        distanceToGoal = HalDashboard.getNumber(
-                RobotInfo.AUTOKEY_DISTANCE_TO_GOAL, RobotInfo.AUTO_DISTANCE_TO_GOAL);
+        distanceToLowBar = HalDashboard.getNumber(
+                "DistanceToLowBar", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceCrossLowBar = HalDashboard.getNumber(
+                "DistanceCrossLowBar", distanceToLowBar + 20.0);
+        distanceToTower = HalDashboard.getNumber("DistanceToTower", distanceToLowBar + 125.0);
+        turnToTower = HalDashboard.getNumber("TurnToTower", 60.0);
+        distanceToGoal = HalDashboard.getNumber("DistanceToGoal", 138.0);
 
-        event = new TrcEvent(moduleName);
         sm = new TrcStateMachine(moduleName);
+        event = new TrcEvent(moduleName);
         timer = new TrcTimer(moduleName);
-
-        sm.start(State.DRIVE_TO_DEFENSE);
+        sm.start(State.DRIVE_TO_LOWBAR);
      }   //Autonomous
 
     //
@@ -74,24 +69,17 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
 
             switch (state)
             {
-                case TEST:
+                case DRIVE_TO_LOWBAR:
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, 96.0, 0.0, false, event);
-                    sm.addEvent(event);
-                    sm.waitForEvents(State.DONE);
-                    break;
-
-                case DRIVE_TO_DEFENSE:
-                    robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceToLowBar, 0.0, false, event, 2.0);
                     robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.DRIVE_OVER_DEFENSE);
+                    sm.waitForEvents(State.CROSS_LOWBAR);
                     break;
 
-                case DRIVE_OVER_DEFENSE:
+                case CROSS_LOWBAR:
                     robot.encoderYPidCtrl.setOutputRange(-0.4, 0.4);
-                    robot.pidDrive.setTarget(0.0, distanceOverDefense, 0.0, false, event, 5.0);
+                    robot.pidDrive.setTarget(0.0, distanceCrossLowBar, 0.0, false, event, 3.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DRIVE_TO_TOWER);
                     break;
@@ -121,7 +109,7 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
 
                 case SCORE_GOAL:
                     robot.pickup.setPower(RobotInfo.PICKUP_OUT_POWER);
-                    timer.set(5.0, event);
+                    timer.set(2.0, event);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

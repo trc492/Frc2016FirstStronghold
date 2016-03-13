@@ -31,11 +31,11 @@ public class RobotInfo
     public static final int CANID_RIGHTFRONTMOTOR       = 4;    //40A: Yellow
     public static final int CANID_LEFTREARMOTOR         = 5;    //40A: Green
     public static final int CANID_RIGHTREARMOTOR        = 6;    //40A: Blue
-    public static final int CANID_LEFT_ARM              = 7;    //30A: Purple
+    public static final int CANID_LEFT_ARM              = 11;    //30A: Purple
     public static final int CANID_RIGHT_ARM             = 8;    //30A: Gray
     public static final int CANID_CRANE                 = 9;    //40A: White
     public static final int CANID_TILTER                = 10;   //40A: Orange
-    public static final int CANID_RESERVED1             = 11;   //40A: Yellow
+    public static final int CANID_RESERVED1             = 7;   //40A: Yellow
     public static final int CANID_WINCH                 = 12;   //40A: Green
     public static final int CANID_PICKUP                = 13;   //30A: Blue
     public static final int CANID_RESERVED2             = 14;   //30A: Purple
@@ -140,12 +140,12 @@ public class RobotInfo
     public static final double CRANE_MIN_LENGTH         = 0.0;
     public static final double CRANE_MAX_LENGTH         = 90.0;
 
-    public static final double TILTER_DEGREES_PER_COUNT = 0.001;
+    public static final double TILTER_DEGREES_PER_COUNT = (16.0 / 6083.0);
     public static final double TILTER_CAL_POWER         = 0.25;
     public static final double TILTER_POWER             = 0.3;
     public static final double TILTER_DOWN_POWER_LIMIT  = -0.3;
     public static final double TILTER_UP_POWER_LIMIT    = 0.5;
-    public static final double TILTER_KP                = 0.06;
+    public static final double TILTER_KP                = 0.03;
     public static final double TILTER_KI                = 0.0;
     public static final double TILTER_KD                = 0.0;
     public static final double TILTER_KF                = 0.0;
@@ -155,7 +155,7 @@ public class RobotInfo
     public static final double TILTER_MAX_ANGLE         = 120.0;
 
     public static final double PICKUP_IN_POWER          = 0.5;
-    public static final double PICKUP_OUT_POWER         = 1.0;
+    public static final double PICKUP_OUT_POWER         = -1.0;
 
     //
     // Autonomous parameters.

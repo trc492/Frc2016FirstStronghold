@@ -201,10 +201,12 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         rightFrontMotor.setInverted(true);
         rightRearMotor.setInverted(true);
 
+        /*
         leftFrontMotor.setVoltageRampRate(10.0);
         leftRearMotor.setVoltageRampRate(10.0);
         rightFrontMotor.setVoltageRampRate(10.0);
         rightRearMotor.setVoltageRampRate(10.0);
+        */
 
         leftFrontMotor.setPositionSensorInverted(true);
         leftRearMotor.setPositionSensorInverted(true);
