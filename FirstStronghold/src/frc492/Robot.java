@@ -146,7 +146,14 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         //
         // Sensors.
         //
-        gyro = new FrcADXRS450Gyro();
+        try
+        {
+            gyro = new FrcADXRS450Gyro();
+        }
+        catch (NullPointerException e)
+        {
+            gyro = null;
+        }
 //        gyro = new FrcAnalogGyro(0);
         /*
         sonar = new TrcAnalogInput(
@@ -456,7 +463,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         {
             value = driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE;
         }
-        else if (pidCtrl == gyroTurnPidCtrl)
+        else if (pidCtrl == gyroTurnPidCtrl && gyro != null)
         {
             value = gyro.getAngle();
         }

@@ -2,6 +2,7 @@ package frc492;
 
 import frclib.FrcJoystick;
 import frclib.FrcRobotBase;
+import hallib.HalDashboard;
 import trclib.TrcBooleanState;
 import trclib.TrcDbgTrace;
 import trclib.TrcRGBLight;
@@ -34,8 +35,8 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             new TrcBooleanState("leftLightFlashing", false);
     private TrcBooleanState rightLightFlashingToggle =
             new TrcBooleanState("rightLightFlashing", false);
+    private TrcBooleanState armManualOverride = new TrcBooleanState("ArmManualOverride", false);
     private boolean slowDriveOverride = false;
-    private boolean syncArmEnabled = true;
     private boolean sampleTilterAngle = false;
     private double prevTilterAngle = RobotInfo.TILTER_MIN_ANGLE;
     private int leftColorValue = 0;
@@ -149,7 +150,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
         // Arm/Winch operation.
         //
         double power = operatorStick.getYWithDeadband(true);
-        robot.arm.setPower(power, syncArmEnabled);
+        robot.arm.setPower(power, !armManualOverride.getState());
 
         if (sampleTilterAngle)
         {
@@ -366,8 +367,13 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
             switch (button)
             {
                 case FrcJoystick.LOGITECH_TRIGGER:
-                    syncArmEnabled = !pressed;
-                    robot.arm.setLimitSwitchesEnabled(!pressed);
+                    if (pressed)
+                    {
+                        armManualOverride.toggleState();
+                        boolean override = armManualOverride.getState();
+                        robot.arm.setLimitSwitchesEnabled(!override);
+                        HalDashboard.putBoolean("ArmManualOverride", !override);
+                    }
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON2:

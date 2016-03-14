@@ -31,7 +31,13 @@ import trclib.TrcSensor.SensorData;
 public class FrcADXRS450Gyro extends ADXRS450_Gyro implements HalGyro
 {
     private double zSign = 1.0;
-    
+
+    public FrcADXRS450Gyro() throws NullPointerException
+    {
+        super();
+        reset();
+    }   //FrcADXRS450Gyro
+
     //
     // Implements HalGyro interface.
     //
