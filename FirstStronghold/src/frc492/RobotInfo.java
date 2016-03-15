@@ -31,11 +31,11 @@ public class RobotInfo
     public static final int CANID_RIGHTFRONTMOTOR       = 4;    //40A: Yellow
     public static final int CANID_LEFTREARMOTOR         = 5;    //40A: Green
     public static final int CANID_RIGHTREARMOTOR        = 6;    //40A: Blue
-    public static final int CANID_LEFT_ARM              = 11;    //30A: Purple
+    public static final int CANID_RESERVED1             = 7;    //30A: Purple
     public static final int CANID_RIGHT_ARM             = 8;    //30A: Gray
     public static final int CANID_CRANE                 = 9;    //40A: White
     public static final int CANID_TILTER                = 10;   //40A: Orange
-    public static final int CANID_RESERVED1             = 7;   //40A: Yellow
+    public static final int CANID_LEFT_ARM              = 11;   //40A: Yellow
     public static final int CANID_WINCH                 = 12;   //40A: Green
     public static final int CANID_PICKUP                = 13;   //30A: Blue
     public static final int CANID_RESERVED2             = 14;   //30A: Purple
