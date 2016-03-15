@@ -43,13 +43,14 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
     private static final double MIN_MOTOR_POWER = -1.0;
     private static final double MAX_MOTOR_POWER = 1.0;
+    private static final double CAL_STALL_TIME = 0.5;
 
     private String instanceName;
     private HalMotorController motor1;
     private HalMotorController motor2;
     private TrcPidController pidCtrl;
 
-    private boolean active = false;
+    private boolean taskEnabled = false;
     private double syncGain = 0.0;
     private double positionScale = 1.0;
     private boolean holdTarget = false;
@@ -57,15 +58,18 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     private double expiredTime = 0.0;
     private double calPower = 0.0;
     private double motorPower = 0.0;
-    private double prevPos = 0.0;
-    private double prevTime = 0.0;
+    private double prevPos1 = 0.0;
+    private double prevPos2 = 0.0;
+    private double prevTime1 = 0.0;
+    private double prevTime2 = 0.0;
     private double prevTarget = 0.0;
     private boolean motor1ZeroCalDone = false;
     private boolean motor2ZeroCalDone = false;
     //
     // Stall protection.
     //
-    private boolean stalled = false;
+    private boolean motor1Stalled = false;
+    private boolean motor2Stalled = false;
     private double stallMinPower = 0.0;
     private double stallTimeout = 0.0;
     private double resetTimeout = 0.0;
@@ -161,25 +165,6 @@ public class TrcPidMotor implements TrcTaskMgr.Task
     }   //toString
 
     /**
-     * This method returns the state of the PID motor.
-     *
-     * @return true if PID motor is active, false otherwise.
-     */
-    public boolean isActive()
-    {
-        final String funcName = "isActive";
-
-        if (debugEnabled)
-        {
-            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
-            dbgTrace.traceExit(
-                    funcName, TrcDbgTrace.TraceLevel.API, "=%s", Boolean.toString(active));
-        }
-
-        return active;
-    }   //isActive
-
-    /**
      * This method cancels a previous active PID motor operation.
      */
     public void cancel()
@@ -191,7 +176,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
-        if (active)
+        if (taskEnabled)
         {
             //
             // Stop the physical motor(s). If there is a notification event, signal it canceled.
@@ -288,35 +273,11 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
         }
 
-        this.stallMinPower = stallMinPower;
-        this.stallTimeout = stallTimeout;
-        this.resetTimeout = resetTimeout;
+        this.stallMinPower = Math.abs(stallMinPower);
+        this.stallTimeout = Math.abs(stallTimeout);
+        this.resetTimeout = Math.abs(resetTimeout);
     }   //setStallProtection
 
-    /**
-     * This method enables/disable motor synchronization for a 2-motor PIDMotor.
-     *
-     * @param enabled specifies true to enable motor synchronization, false otherwise.
-     */
-    /*
-    public void setSynchEnabled(boolean enabled)
-    {
-        final String funcName = "setSyncEnabled";
-
-        if (debugEnabled)
-        {
-            dbgTrace.traceEnter(
-                    funcName, TrcDbgTrace.TraceLevel.API, "enabled=%s", Boolean.toString(enabled));
-            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
-        }
-
-        if (motor2 != null && syncGain != 0.0)
-        {
-            syncEnabled = enabled;
-        }
-    }   //setSyncEnabled
-    */
-    
     /**
      * This method starts a PID operation by setting the PID target.
      *
@@ -341,7 +302,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     event != null? event.toString(): "null", timeout);
         }
 
-        if (active)
+        if (taskEnabled)
         {
             //
             // A previous PID operation in progress, stop it but don't stop the motor
@@ -362,22 +323,32 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         {
             event.clear();
         }
-
         notifyEvent = event;
-        expiredTime = timeout;
+
         this.holdTarget = holdTarget;
-        //
-        // If a timeout is provided, set the expired time.
-        //
-        if (timeout != 0.0)
+        if (holdTarget)
         {
-            expiredTime += HalUtil.getCurrentTime();
+            //
+            // Timeout is not allowed if holdTarget is true.
+            //
+            expiredTime = 0.0;
+        }
+        else
+        {
+            //
+            // If a timeout is provided, set the expired time.
+            //
+            expiredTime = timeout;
+            if (timeout != 0.0)
+            {
+                expiredTime += HalUtil.getCurrentTime();
+            }
         }
 
         //
         // Set the PID motor task active.
         //
-        setActive(true);
+        setTaskEnabled(true);
 
         if (debugEnabled)
         {
@@ -437,7 +408,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
         if (power != 0.0 || calPower == 0.0)
         {
-            if (active && stopPid)
+            if (taskEnabled && stopPid)
             {
                 //
                 // A previous PID operation is still in progress, cancel it.
@@ -448,25 +419,29 @@ public class TrcPidMotor implements TrcTaskMgr.Task
 
             power = TrcUtil.limit(power, rangeLow, rangeHigh);
 
-            if (stalled)
+            if (motor1Stalled || motor2Stalled)
             {
+                double currTime = HalUtil.getCurrentTime();
                 if (power == 0.0)
                 {
                     //
                     // We had a stalled condition but if power is removed for at least
                     // reset timeout, we clear the stalled condition.
                     //
-                    if (resetTimeout == 0.0 ||
-                        HalUtil.getCurrentTime() - prevTime > resetTimeout)
+                    if (resetTimeout == 0.0 || currTime - prevTime1 >= resetTimeout)
                     {
-                        prevPos = motor1.getPosition();
-                        prevTime = HalUtil.getCurrentTime();
-                        stalled = false;
+                        prevPos1 = motor1.getPosition();
+                        prevPos2 = motor2 != null? motor2.getPosition(): 0.0;
+                        prevTime1 = currTime;
+                        prevTime2 = currTime;
+                        motor1Stalled = false;
+                        motor2Stalled = false;
                     }
                 }
                 else
                 {
-                    prevTime = HalUtil.getCurrentTime();
+                    prevTime1 = currTime;
+                    prevTime2 = currTime;
                 }
             }
             else
@@ -479,21 +454,36 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                     // - power is above stallMinPower
                     // - motor has not moved for at least stallTimeout.
                     //
-                    double currPos = motor1.getPosition();
-                    if (Math.abs(power) < Math.abs(stallMinPower) || currPos != prevPos)
+                    double currTime = HalUtil.getCurrentTime();
+                    double currPos1 = motor1.getPosition();
+                    double currPos2 = motor2 != null? motor2.getPosition(): 0.0;
+                    boolean belowMinPower = Math.abs(power) < stallMinPower;
+
+                    if (belowMinPower || currPos1 != prevPos1)
                     {
-                        prevPos = currPos;
-                        prevTime = HalUtil.getCurrentTime();
+                        prevPos1 = currPos1;
+                        prevTime1 = currTime;
                     }
 
-                    if (HalUtil.getCurrentTime() - prevTime > stallTimeout)
+                    if (motor2 != null && (belowMinPower || currPos2 != prevPos2))
                     {
-                        //
-                        // We have detected a stalled condition for at least
-                        // stallTimeout. Kill power to protect the motor.
-                        //
-                        motorPower = 0.0;
-                        stalled = true;
+                        prevPos2 = currPos2;
+                        prevTime2 = currTime;
+                    }
+
+                    if (currTime - prevTime1 >= stallTimeout)
+                    {
+                        motor1Stalled = true;
+                    }
+
+                    if (motor2 != null && currTime - prevTime2 >= stallTimeout)
+                    {
+                        motor2Stalled = true;
+                    }
+
+                    if (motor1Stalled || motor2Stalled)
+                    {
+                        power = 0.0;
                     }
                 }
 
@@ -670,7 +660,11 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         this.calPower = -Math.abs(calPower);
         motor1ZeroCalDone = false;
         motor2ZeroCalDone = motor2 == null || syncGain == 0.0;
-        setActive(true);
+        prevPos1 = 0.0;
+        prevPos2 = 0.0;
+        prevTime1 = 0.0;
+        prevTime2 = 0.0;
+        setTaskEnabled(true);
 
         if (debugEnabled)
         {
@@ -777,7 +771,7 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         //
         // Canceling previous PID operation if any.
         //
-        setActive(false);
+        setTaskEnabled(false);
         pidCtrl.reset();
 
         if (stopMotor)
@@ -798,20 +792,20 @@ public class TrcPidMotor implements TrcTaskMgr.Task
      * This method activates/deactivates a PID motor operation by enabling/disabling
      * the PID motor task.
      *
-     * @param active specifies true to activate a PID motor operation, false otherwise.
+     * @param enabled specifies true to enabled PID task, false otherwise.
      */
-    private void setActive(boolean active)
+    private void setTaskEnabled(boolean enabled)
     {
-        final String funcName = "setActive";
+        final String funcName = "setTaskEnabled";
 
         if (debugEnabled)
         {
             dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.FUNC,
-                                "active=%s", Boolean.toString(active));
+                                "enabled=%s", Boolean.toString(enabled));
         }
 
         TrcTaskMgr taskMgr = TrcTaskMgr.getInstance();
-        if (active)
+        if (enabled)
         {
             taskMgr.registerTask(instanceName, this, TrcTaskMgr.TaskType.STOP_TASK);
             taskMgr.registerTask(instanceName, this, TrcTaskMgr.TaskType.POSTCONTINUOUS_TASK);
@@ -821,13 +815,13 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             taskMgr.unregisterTask(this, TrcTaskMgr.TaskType.STOP_TASK);
             taskMgr.unregisterTask(this, TrcTaskMgr.TaskType.POSTCONTINUOUS_TASK);
         }
-        this.active = active;
+        this.taskEnabled = enabled;
 
         if (debugEnabled)
         {
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.FUNC);
         }
-    }   //setActive
+    }   //setTaskEnabled
 
     //
     // Implements TrcTaskMgr.Task
@@ -905,16 +899,58 @@ public class TrcPidMotor implements TrcTaskMgr.Task
         if (calPower != 0.0)
         {
             //
-            // We are in zero calibration mode.
+            // Zero calibration mode:
+            // Move the motor towards the zero position until either the lower limit switch
+            // is activated or if the motor stalled for at least CAL_STALL_TIME. The motor
+            // stalled method is useful if we don't have a limit switch or if the limit switch
+            // is malfunctioning.
             //
-            if (!motor1ZeroCalDone && motor1.isLowerLimitSwitchActive())
+            double currTime = HalUtil.getCurrentTime();
+
+            if (!motor1ZeroCalDone)
             {
-                motor1ZeroCalDone = true;
+                if (motor1.isLowerLimitSwitchActive())
+                {
+                    motor1ZeroCalDone = true;
+                }
+                else
+                {
+                    double currPos = motor1.getPosition();
+
+                    if (currPos != prevPos1)
+                    {
+                        prevPos1 = currPos;
+                        prevTime1 = currTime;
+                    }
+
+                    if (currTime - prevTime1 >= CAL_STALL_TIME)
+                    {
+                        motor1ZeroCalDone = true;
+                    }
+                }
             }
 
-            if (!motor2ZeroCalDone && motor2.isLowerLimitSwitchActive())
+            if (!motor2ZeroCalDone)
             {
-                motor2ZeroCalDone = true;
+                if (motor2.isLowerLimitSwitchActive())
+                {
+                    motor2ZeroCalDone = true;
+                }
+                else
+                {
+                    double currPos = motor2.getPosition();
+
+                    if (currPos != prevPos2)
+                    {
+                        prevPos2 = currPos;
+                        prevTime2 = currTime;
+                    }
+
+                    if (currTime - prevTime2 >= CAL_STALL_TIME)
+                    {
+                        motor2ZeroCalDone = true;
+                    }
+                }
             }
 
             if (motor1ZeroCalDone && motor2ZeroCalDone)
@@ -923,8 +959,9 @@ public class TrcPidMotor implements TrcTaskMgr.Task
                 // Done with zero calibration.
                 //
                 calPower = 0.0;
-                setActive(false);
+                setTaskEnabled(false);
             }
+
             setMotorPower(calPower, false);
         }
         else
@@ -935,8 +972,8 @@ public class TrcPidMotor implements TrcTaskMgr.Task
             // operation. Stop the motor and if there is a notification
             // event, signal it.
             //
-            if (!holdTarget && pidCtrl.isOnTarget() ||
-                expiredTime != 0.0 && HalUtil.getCurrentTime() >= expiredTime)
+            boolean expired = expiredTime != 0.0 && HalUtil.getCurrentTime() >= expiredTime;
+            if (expired || !holdTarget && pidCtrl.isOnTarget())
             {
                 stop(true);
                 if (notifyEvent != null)

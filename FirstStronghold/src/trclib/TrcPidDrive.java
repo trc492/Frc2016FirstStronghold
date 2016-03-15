@@ -115,16 +115,23 @@ public class TrcPidDrive implements TrcTaskMgr.Task
             event.clear();
         }
         this.notifyEvent = event;
-        this.expiredTime = timeout;
-        if (timeout != 0)
-        {
-            this.expiredTime += HalUtil.getCurrentTime();
-        }
 
         flags = 0;
         if (holdTarget)
         {
             flags |= PIDDRIVEF_HOLD_TARGET;
+            //
+            // We don't allow timeout if we hold target.
+            //
+            this.expiredTime = 0.0;
+        }
+        else
+        {
+            this.expiredTime = timeout;
+            if (timeout != 0)
+            {
+                this.expiredTime += HalUtil.getCurrentTime();
+            }
         }
 
         if (xTarget == 0.0 && yTarget == 0.0 && turnTarget != 0.0)
@@ -415,32 +422,23 @@ public class TrcPidDrive implements TrcTaskMgr.Task
         boolean xOnTarget = xPidCtrl == null || xPidCtrl.isOnTarget();
         boolean yOnTarget = yPidCtrl == null || yPidCtrl.isOnTarget();
         boolean turnOnTarget = turnPidCtrl == null || turnPidCtrl.isOnTarget();
+        boolean holdTarget = (flags & PIDDRIVEF_HOLD_TARGET) != 0;
+        boolean done = expired ||
+                       !holdTarget &&
+                       (turnOnTarget && ((flags & PIDDRIVEF_TURN_ONLY) != 0) ||
+                        xOnTarget && yOnTarget && turnOnTarget);
 
         if ((flags & PIDDRIVEF_SET_HEADING) != 0)
         {
             driveBase.mecanumDrive_Cartesian(manualX, manualY, turnPower, false, 0.0);
         }
-        else if (expired ||
-                 turnOnTarget &&
-                 ((flags & PIDDRIVEF_TURN_ONLY) != 0 ||
-                  xOnTarget && yOnTarget))
+        else if (done)
         {
-            if ((flags & PIDDRIVEF_HOLD_TARGET) == 0)
+            stop();
+            if (notifyEvent != null)
             {
-                stop();
-                if (notifyEvent != null)
-                {
-                    notifyEvent.set(true);
-                    notifyEvent = null;
-                }
-            }
-            else if (xPidCtrl != null)
-            {
-                driveBase.mecanumDrive_Cartesian(0.0, 0.0, 0.0, false, 0.0);
-            }
-            else
-            {
-                driveBase.drive(0.0, 0.0);
+                notifyEvent.set(true);
+                notifyEvent = null;
             }
         }
         else if (xPidCtrl != null)
