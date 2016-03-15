@@ -39,7 +39,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     private static final boolean visionTargetEnabled = false;
     private static final boolean debugDriveBase = true;
     private static final boolean debugArm = true;
-    private static final boolean debugCrane = true;
+    private static final boolean debugCrane = false;
     private static final boolean debugPidDrive = false;
     private static final boolean debugPidSonar = false;
     private static final double DASHBOARD_UPDATE_INTERVAL = 0.1;
@@ -420,29 +420,35 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
                         driveBase.getXPosition()*RobotInfo.DRIVEBASE_X_SCALE,
                         driveBase.getYPosition()*RobotInfo.DRIVEBASE_Y_SCALE,
                         driveBase.getHeading());
+
+                if (debugPidDrive)
+                {
+                    encoderXPidCtrl.displayPidInfo(3);
+                    encoderYPidCtrl.displayPidInfo(5);
+                    gyroTurnPidCtrl.displayPidInfo(7);
+                }
+                else if (debugPidSonar)
+                {
+                    encoderXPidCtrl.displayPidInfo(3);
+                    sonarYPidCtrl.displayPidInfo(5);
+                    gyroTurnPidCtrl.displayPidInfo(7);
+                }
+
+                HalDashboard.putNumber("DriveBase.X", driveBase.getXPosition());
+                HalDashboard.putNumber("DriveBase.Y", driveBase.getYPosition());
+                HalDashboard.putNumber("DriveBase.Heading", driveBase.getHeading());
             }
 
             if (debugArm)
             {
-                arm.displayDebugInfo(3);
+                arm.displayDebugInfo(9);
+                HalDashboard.putNumber("LeftArmPos", arm.getLeftRawPosition());
+                HalDashboard.putNumber("RightArmPos", arm.getRightRawPosition());
             }
 
             if (debugCrane)
             {
-                crane.displayDebugInfo(7);
-            }
-
-            if (debugPidDrive)
-            {
-                encoderXPidCtrl.displayPidInfo(3);
-                encoderYPidCtrl.displayPidInfo(5);
-                gyroTurnPidCtrl.displayPidInfo(7);
-            }
-            else if (debugPidSonar)
-            {
-                encoderXPidCtrl.displayPidInfo(3);
-                sonarYPidCtrl.displayPidInfo(5);
-                gyroTurnPidCtrl.displayPidInfo(7);
+                crane.displayDebugInfo(8);
             }
         }
     }   //updateDashboard

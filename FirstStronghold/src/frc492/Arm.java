@@ -107,6 +107,16 @@ public class Arm implements TrcPidController.PidInput
         return pidMotor.getPosition();
     }
 
+    public double getLeftRawPosition()
+    {
+        return leftMotor.getPosition();
+    }
+
+    public double getRightRawPosition()
+    {
+        return leftMotor.getPosition();
+    }
+
     public void zeroCalibrate()
     {
         pidMotor.zeroCalibrate(RobotInfo.ARM_CAL_POWER);

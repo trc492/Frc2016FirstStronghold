@@ -66,7 +66,7 @@ public class AutoTeeterTotter implements AutoStrategy
                 case APPROACH_TEETER_TOTTER:
                     robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
                     robot.pidDrive.setTarget(
-                            0.0, distanceToTeeterTotter + 20.0, 0, false, event, 2.0);
+                            0.0, distanceApproachTeeterTotter, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.LOWER_ARMS);
                     break;

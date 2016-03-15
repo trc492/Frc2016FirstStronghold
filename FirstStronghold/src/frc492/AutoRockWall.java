@@ -80,7 +80,7 @@ public class AutoRockWall implements AutoStrategy
                      */
                     robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
                     robot.pidDrive.setTarget(
-                            0.0, distanceToRockWall + 20.0, 0.0, false, event, 2.0);
+                            0.0, distanceApproachRockWall, 0.0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.LOWER_ARMS);
                     break;
