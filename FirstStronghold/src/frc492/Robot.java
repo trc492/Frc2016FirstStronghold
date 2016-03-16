@@ -208,6 +208,11 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         rightFrontMotor.setInverted(true);
         rightRearMotor.setInverted(true);
 
+        leftFrontMotor.enableLimitSwitch(false, false);
+        leftRearMotor.enableLimitSwitch(false, false);
+        rightFrontMotor.enableLimitSwitch(false, false);
+        rightRearMotor.enableLimitSwitch(false, false);
+
         /*
         leftFrontMotor.setVoltageRampRate(10.0);
         leftRearMotor.setVoltageRampRate(10.0);
@@ -300,6 +305,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
         // Pickup subsystem
         //
         pickup = new FrcCANTalon(RobotInfo.CANID_PICKUP);
+        pickup.enableLimitSwitch(false, false);
 
         //
         // RGB LED light

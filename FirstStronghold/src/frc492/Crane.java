@@ -35,6 +35,7 @@ public class Crane implements TrcPidController.PidInput
         //
         winchMotor = new FrcCANTalon(RobotInfo.CANID_WINCH);
         winchMotor.setInverted(true);
+        winchMotor.enableLimitSwitch(false, false);
         winchMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
         winchMotor.reverseSensor(false);
         winchPidCtrl = new TrcPidController(
@@ -55,6 +56,7 @@ public class Crane implements TrcPidController.PidInput
         //
         craneMotor = new FrcCANTalon(RobotInfo.CANID_CRANE);
         craneMotor.setInverted(true);
+        craneMotor.enableLimitSwitch(true, true);
         craneMotor.ConfigRevLimitSwitchNormallyOpen(true);
         craneMotor.ConfigFwdLimitSwitchNormallyOpen(true);
         craneMotor.setLimitSwitchesSwapped(true);
@@ -79,6 +81,7 @@ public class Crane implements TrcPidController.PidInput
         //
         tilterMotor = new FrcCANTalon(RobotInfo.CANID_TILTER);
         tilterMotor.setInverted(true);
+        craneMotor.enableLimitSwitch(true, true);
         tilterMotor.ConfigRevLimitSwitchNormallyOpen(false);
         tilterMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         tilterMotor.setLimitSwitchesSwapped(true);

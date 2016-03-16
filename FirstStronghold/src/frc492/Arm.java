@@ -27,6 +27,9 @@ public class Arm implements TrcPidController.PidInput
         rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ARM);
         leftMotor.setInverted(false);
         rightMotor.setInverted(false);
+        leftMotor.setPositionSensorInverted(false);
+        rightMotor.setPositionSensorInverted(false);
+        leftMotor.enableLimitSwitch(true, true);
         leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
         rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
         leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
