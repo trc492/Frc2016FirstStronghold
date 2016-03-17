@@ -26,8 +26,8 @@ package trclib;
 import hallib.HalUtil;
 
 /**
- * This class implements a timer that will generate an event
- * when the time has expired. This is useful for doing delays
+ * This class implements a timer that will generate an event or callback
+ * when the timer has expired or canceled. This is useful for doing delays
  * in autonomous.
  */
 public class TrcTimer implements TrcTaskMgr.Task
@@ -36,12 +36,29 @@ public class TrcTimer implements TrcTaskMgr.Task
     private static final boolean debugEnabled = false;
     private TrcDbgTrace dbgTrace = null;
 
+    /**
+     * This interface is implemented by the object that wishes to be notified of
+     * timer expiration by a callback.
+     */
+    public interface Callback
+    {
+        /**
+         * This method is called when the timer has expired or canceled.
+         *
+         * @param timer specifies the timer that has expired or canceled.
+         * @param canceled specifies true if the timer has been canceled, false otherwise.
+         */
+        public void timerCallback(TrcTimer timer, boolean canceled);
+
+    }   //interface Callback
+
     private final String instanceName;
     private double expiredTime;
-    private boolean enabled;
+    private boolean taskEnabled;
     private boolean expired;
     private boolean canceled;
     private TrcEvent notifyEvent;
+    private Callback callback;
 
     /**
      * Constructor: Creates an instance of the timer with the given name.
@@ -61,10 +78,11 @@ public class TrcTimer implements TrcTaskMgr.Task
 
         this.instanceName = instanceName;
         this.expiredTime = 0.0;
-        this.enabled = false;
+        this.taskEnabled = false;
         this.expired = false;
         this.canceled = false;
         this.notifyEvent = null;
+        this.callback = null;
     }   //TrcTimer
 
     /**
@@ -78,8 +96,73 @@ public class TrcTimer implements TrcTaskMgr.Task
     }   //toString
 
     /**
+     * This method cancels the timer if it's set but has not expired.
+     * If the timer is canceled, the event is signaled or the callback
+     * interface is called.
+     */
+    public void cancel()
+    {
+        final String funcName = "cancel";
+
+        if (debugEnabled)
+        {
+            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
+        if (taskEnabled)
+        {
+            setTaskEnabled(false);
+            expiredTime = 0.0;
+            expired = false;
+            if (notifyEvent != null)
+            {
+                notifyEvent.cancel();
+                notifyEvent = null;
+            }
+            else if (callback != null)
+            {
+                callback.timerCallback(this, true);
+                callback = null;
+            }
+        }
+    }   //cancel
+
+    /**
      * This methods sets the expire time relative to the current time.
-     * When the time expires, it will signal the given event.
+     * When the timer has expired or canceled, it will call the callback interface.
+     *
+     * @param time specifies the expire time in seconds relative to the current time.
+     * @param callback specifies the callback interface to call.
+     */
+    public void set(double time, Callback callback)
+    {
+        final String funcName = "set";
+
+        if (debugEnabled)
+        {
+            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API, "time=%f", time);
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
+        if (callback == null)
+        {
+            throw new IllegalArgumentException("Must provide the callback interface.");
+        }
+
+        if (taskEnabled)
+        {
+            cancel();
+        }
+
+        expiredTime = HalUtil.getCurrentTime() + time;
+        this.callback = callback;
+        setTaskEnabled(true);
+    }   //set
+
+    /**
+     * This methods sets the expire time relative to the current time.
+     * When the timer has expired or canceled, it will signal the given event.
      *
      * @param time specifies the expire time in seconds relative to the current time.
      * @param event specifies the event to signal when time has expired.
@@ -94,22 +177,25 @@ public class TrcTimer implements TrcTaskMgr.Task
                     funcName, TrcDbgTrace.TraceLevel.API,
                     "time=%f,event=%s",
                     time, event != null? event.toString(): "null");
+            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
+        }
+
+        if (event == null)
+        {
+            throw new IllegalArgumentException("Must provide a notification event.");
+        }
+
+        if (taskEnabled)
+        {
+            cancel();
         }
 
         expired = false;
         canceled = false;
         expiredTime = HalUtil.getCurrentTime() + time;
-        if (event != null)
-        {
-            event.clear();
-        }
         notifyEvent = event;
-        setEnabled(true);
-
-        if (debugEnabled)
-        {
-            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
-        }
+        notifyEvent.clear();
+        setTaskEnabled(true);
     }   //set
 
     /**
@@ -151,41 +237,13 @@ public class TrcTimer implements TrcTaskMgr.Task
     }   //isCanceled
 
     /**
-     * This method cancels the timer if it's set but has not expired.
-     * If the timer is canceled, the event is signaled.
-     */
-    public void cancel()
-    {
-        final String funcName = "cancel";
-
-        if (debugEnabled)
-        {
-            dbgTrace.traceEnter(funcName, TrcDbgTrace.TraceLevel.API);
-        }
-
-        if (enabled)
-        {
-            setEnabled(false);
-            expiredTime = 0.0;
-            expired = false;
-            notifyEvent.cancel();
-            notifyEvent = null;
-        }
-
-        if (debugEnabled)
-        {
-            dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.API);
-        }
-    }   //cancel
-
-    /**
      * This private method enables/disables the task that checks for timer expiration.
      *
      * @param enabled specifies if the timer task is enabled.
      */
-    private void setEnabled(boolean enabled)
+    private void setTaskEnabled(boolean enabled)
     {
-        final String funcName = "setEnabled";
+        final String funcName = "setTaskEnabled";
 
         if (debugEnabled)
         {
@@ -203,13 +261,13 @@ public class TrcTimer implements TrcTaskMgr.Task
         {
             TrcTaskMgr.getInstance().unregisterTask(this, TrcTaskMgr.TaskType.PRECONTINUOUS_TASK);
         }
-        this.enabled = enabled;
+        this.taskEnabled = enabled;
 
         if (debugEnabled)
         {
             dbgTrace.traceExit(funcName, TrcDbgTrace.TraceLevel.FUNC);
         }
-    }   //setEnabled
+    }   //setTaskEnabled
 
     //
     // Implements TrcTaskMgr.Task
@@ -254,9 +312,9 @@ public class TrcTimer implements TrcTaskMgr.Task
                     "mode=%s", runMode.toString());
         }
 
-        if (enabled && !expired && HalUtil.getCurrentTime() >= expiredTime)
+        if (HalUtil.getCurrentTime() >= expiredTime)
         {
-            setEnabled(false);
+            setTaskEnabled(false);
 
             if (debugEnabled)
             {
@@ -271,6 +329,11 @@ public class TrcTimer implements TrcTaskMgr.Task
                 notifyEvent.set(true);
                 notifyEvent = null;
             }
+            else if (callback != null)
+            {
+                callback.timerCallback(this,  false);
+            }
+
             expiredTime = 0.0;
             expired = true;
         }
