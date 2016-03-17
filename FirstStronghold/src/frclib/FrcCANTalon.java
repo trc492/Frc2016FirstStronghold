@@ -33,7 +33,11 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     private boolean revLimitSwitchNormalOpen = false;
     private boolean fwdLimitSwitchNormalOpen = false;
     private double zeroPosition = 0.0;
-    
+    private boolean softLowerLimitEnabled = false;
+    private boolean softUpperLimitEnabled = false;
+    private double softLowerLimit = 0.0;
+    private double softUpperLimit = 0.0;
+
     /**
      * Constructor: Create an instance of the object.
      *
@@ -217,8 +221,14 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
      */
     public void setPower(double power)
     {
+        if (softLowerLimitEnabled && power < 0.0 && getPosition() <= softLowerLimit ||
+            softUpperLimitEnabled && power > 0.0 && getPosition() >= softUpperLimit)
+        {
+            power = 0.0;
+        }
+
         super.set(power);
-    }   //setOutput
+    }   //setPower
 
     /**
      * This method inverts the position sensor direction. This may be rare but
@@ -234,5 +244,37 @@ public class FrcCANTalon extends CANTalon implements HalMotorController
     {
         super.reverseSensor(inverted);
     }   //setPositionSensorInverted
+
+    /**
+     * This method enables/disables soft limit switches.
+     *
+     * @param lowerLimitEnabled specifies true to enable lower soft limit switch, false otherwise.
+     * @param upperLimitEnabled specifies true to enable upper soft limit switch, false otherwise.
+     */
+    public void setSoftLimitEnabled(boolean lowerLimitEnabled, boolean upperLimitEnabled)
+    {
+        softLowerLimitEnabled = lowerLimitEnabled;
+        softUpperLimitEnabled = upperLimitEnabled;
+    }   //setSoftLimitEnabled
+
+    /**
+     * This method sets the lower soft limit.
+     *
+     * @param position specifies the position of the lower limit.
+     */
+    public void setSoftLowerLimit(double position)
+    {
+        softLowerLimit = position;
+    }   //setSoftLowerLimit
+
+    /**
+     * This method sets the upper soft limit.
+     *
+     * @param position specifies the position of the upper limit.
+     */
+    public void setSoftUpperLimit(double position)
+    {
+        softUpperLimit = position;
+    }   //setSoftUpperLimit
 
 }   //class FrcCANTalon

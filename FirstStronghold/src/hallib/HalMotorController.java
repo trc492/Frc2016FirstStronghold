@@ -80,4 +80,26 @@ public interface HalMotorController
      */
     public void setPositionSensorInverted(boolean inverted);
 
+    /**
+     * This method enables/disables soft limit switches.
+     *
+     * @param lowerLimitEnabled specifies true to enable lower soft limit switch, false otherwise.
+     * @param upperLimitEnabled specifies true to enable upper soft limit switch, false otherwise.
+     */
+    public void setSoftLimitEnabled(boolean lowerLimitEnabled, boolean upperLimitEnabled);
+
+    /**
+     * This method sets the lower soft limit.
+     *
+     * @param position specifies the position of the lower limit.
+     */
+    public void setSoftLowerLimit(double position);
+
+    /**
+     * This method sets the upper soft limit.
+     *
+     * @param position specifies the position of the upper limit.
+     */
+    public void setSoftUpperLimit(double position);
+
 }   //interface HalMotorController
