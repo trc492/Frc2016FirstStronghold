@@ -28,7 +28,7 @@ public class AutoMoat implements TrcRobot.AutoStrategy
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
         sm.start(State.DRIVE_OVER_MOAT);
-     }   //Autonomous
+     }   //AutoMoat
 
     //
     // Implements TrcRobot.AutoStrategy.

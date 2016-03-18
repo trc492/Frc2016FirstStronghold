@@ -47,7 +47,7 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
         event = new TrcEvent(moduleName);
         timer = new TrcTimer(moduleName);
         sm.start(State.DRIVE_TO_LOWBAR);
-     }   //Autonomous
+     }   //AutoLowBar
 
     //
     // Implements TrcRobot.AutoStrategy.

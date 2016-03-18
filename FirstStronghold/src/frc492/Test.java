@@ -54,6 +54,76 @@ public class Test extends TeleOp
         HalDashboard.putData("Robot tune modes", testChooser);
      }   //Autonomous
 
+    //
+    // Overriding TrcRobot.RobotMode.
+    //
+
+    @Override
+    public void startMode()
+    {
+        super.startMode();  // Call TeleOp startMode.
+        testMode = (TestMode)(testChooser.getSelected());
+
+        switch (testMode)
+        {
+            case DRIVEMOTORS_TEST:
+            case TIMED_DRIVE:
+            case X_DRIVE:
+            case Y_DRIVE:
+            case SONAR_DRIVE:
+                sm.start(State.START);
+                break;
+
+            default:
+                break;
+        }
+    }   //startMode
+
+    @Override
+    public void runPeriodic(double elapsedTime)
+    {
+        if (testMode == TestMode.SENSORS_TEST)
+        {
+            super.runPeriodic(elapsedTime);
+        }
+//        LiveWindow.run();
+    }   //runPeriodic
+
+    @Override
+    public void runContinuous(double elapsedTime)
+    {
+        if (testMode != TestMode.SENSORS_TEST)
+        {
+            dashboard.displayPrintf(1, "[%8.3f] %s", elapsedTime, sm.getState().toString());
+        }
+
+        switch (testMode)
+        {
+            case DRIVEMOTORS_TEST:
+                doDriveMotorsTest();
+                break;
+
+            case TIMED_DRIVE:
+                doTimedDrive();
+                break;
+
+            case X_DRIVE:
+                doXDrive();
+                break;
+
+            case Y_DRIVE:
+                doYDrive();
+                break;
+
+            case SONAR_DRIVE:
+                doSonarDrive();
+                break;
+
+            default:
+                break;
+        }
+    }   //runContinuous
+
     public void doDriveMotorsTest()
     {
         dashboard.displayPrintf(2, "Motors Test: index=%d", motorIndex);
@@ -276,75 +346,5 @@ public class Test extends TeleOp
             }
         }
     }   //doSonarDrive
-
-    //
-    // Overriding TrcRobot.RobotMode.
-    //
-
-    @Override
-    public void startMode()
-    {
-        super.startMode();  // Call TeleOp startMode.
-        TestMode testMode = (TestMode)(testChooser.getSelected());
-
-        switch (testMode)
-        {
-            case DRIVEMOTORS_TEST:
-            case TIMED_DRIVE:
-            case X_DRIVE:
-            case Y_DRIVE:
-            case SONAR_DRIVE:
-                sm.start(State.START);
-                break;
-
-            default:
-                break;
-        }
-    }   //startMode
-
-    @Override
-    public void runPeriodic(double elapsedTime)
-    {
-        if (testMode == TestMode.SENSORS_TEST)
-        {
-            super.runPeriodic(elapsedTime);
-        }
-//        LiveWindow.run();
-    }   //runPeriodic
-
-    @Override
-    public void runContinuous(double elapsedTime)
-    {
-        if (testMode != TestMode.SENSORS_TEST)
-        {
-            dashboard.displayPrintf(1, "[%8.3f] %s", elapsedTime, sm.getState().toString());
-        }
-
-        switch (testMode)
-        {
-            case DRIVEMOTORS_TEST:
-                doDriveMotorsTest();
-                break;
-
-            case TIMED_DRIVE:
-                doTimedDrive();
-                break;
-
-            case X_DRIVE:
-                doXDrive();
-                break;
-
-            case Y_DRIVE:
-                doYDrive();
-                break;
-
-            case SONAR_DRIVE:
-                doSonarDrive();
-                break;
-
-            default:
-                break;
-        }
-    }   //runContinuous
 
 }   //class Test
