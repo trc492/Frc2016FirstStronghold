@@ -4,6 +4,7 @@ import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcRobot.AutoStrategy;
 import trclib.TrcStateMachine;
+import trclib.TrcTimer;
 
 /*
 Autonomous for rock wall
@@ -17,11 +18,12 @@ public class AutoRockWall implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToRockWall;
-    private double distanceApproachRockWall;
-    private double distanceOverRockWall;
+    private double distanceToDefense;
+    private double distanceApproachDefense;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
+    private TrcTimer timer;
 
     // state machine
     private enum State
@@ -37,14 +39,15 @@ public class AutoRockWall implements AutoStrategy
     public AutoRockWall (Robot robot)
     {
         this.robot = robot;
-        distanceToRockWall = HalDashboard.getNumber(
-                "DistanceToRockWall", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceApproachRockWall = HalDashboard.getNumber(
-                "DistanceApproachRockWall", distanceToRockWall + 20.0);
-        distanceOverRockWall = HalDashboard.getNumber(
-                "DistanceOverRockWall", distanceToRockWall + 48.0);
+        distanceToDefense = HalDashboard.getNumber(
+                "1.RockWall:DistanceToDefense", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceApproachDefense = HalDashboard.getNumber(
+                "2.RockWall:DistanceApproachDefense", 70.0);
+        distanceCrossDefense = HalDashboard.getNumber(
+                "DistanceOverRockWall", RobotInfo.AUTO_DISTANCE_CROSS_DEFENSE);
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
+        timer = new TrcTimer(moduleName);
         sm.start(State.DRIVE_TO_ROCKWALL);
     }
 
@@ -68,8 +71,9 @@ public class AutoRockWall implements AutoStrategy
                      * drive to defense
                      */
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToRockWall, 0.0, false, event, 2.0);
-                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
+//                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                    robot.arm.setPower(1.0, 1.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.APPROACH_ROCKWALL);
                     break;
@@ -78,9 +82,9 @@ public class AutoRockWall implements AutoStrategy
                     /*
                      * drive to defense
                      */
-                    robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
+                    robot.encoderYPidCtrl.setOutputRange(-0.4, 0.4);
                     robot.pidDrive.setTarget(
-                            0.0, distanceApproachRockWall, 0.0, false, event, 2.0);
+                            0.0, distanceApproachDefense, 0.0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.LOWER_ARMS);
                     break;
@@ -89,7 +93,9 @@ public class AutoRockWall implements AutoStrategy
                     /*
                      * lower arms to push up robot
                      */
-                    robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 1.0);
+                    //robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 1.0);
+                    robot.arm.setPower(1.0, false);
+                    timer.set(1.0, event);
                     sm.addEvent(event);
                     sm.waitForEvents(State.OVER_ROCKWALL);
                     break;
@@ -98,8 +104,9 @@ public class AutoRockWall implements AutoStrategy
                     /*
                      * drive over wall slowly
                      */
-                    robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceOverRockWall, 0.0, false, event);
+                    robot.arm.setPower(1.0, 2.0);
+                    robot.encoderYPidCtrl.setOutputRange(-0.7, 0.7);
+                    robot.pidDrive.setTarget(0.0, distanceCrossDefense, 0.0, false, event, 5.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;
@@ -109,7 +116,8 @@ public class AutoRockWall implements AutoStrategy
                     //
                     // stop
                     //
-                    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+                    //robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+                    robot.arm.setPower(-1.0, 2.0);
                     sm.stop();
                     break;
             }

@@ -73,13 +73,13 @@ public class RobotInfo
     public static final double ENCODER_X_TOLERANCE      = 1.0;
     public static final double ENCODER_X_SETTLING       = 0.2;
     public static final double DRIVEBASE_Y_SCALE        = 0.01621544056690844936881352331858;
-    public static final double ENCODER_Y_KP             = 0.018;
+    public static final double ENCODER_Y_KP             = 0.025;//0.018;
     public static final double ENCODER_Y_KI             = 0.0;
     public static final double ENCODER_Y_KD             = 0.01;
     public static final double ENCODER_Y_KF             = 0.0;
     public static final double ENCODER_Y_TOLERANCE      = 1.0;
     public static final double ENCODER_Y_SETTLING       = 0.2;
-    public static final double GYRO_TURN_KP             = 0.010;
+    public static final double GYRO_TURN_KP             = 0.02;//0.010;
     public static final double GYRO_TURN_KI             = 0.0;
     public static final double GYRO_TURN_KD             = 0.0;
     public static final double GYRO_TURN_KF             = 0.0;
@@ -160,15 +160,7 @@ public class RobotInfo
     //
     // Autonomous parameters.
     //
-    public static final String AUTOKEY_DISTANCE_TO_DEFENSE      = "DistanceToDefense";
     public static final double AUTO_DISTANCE_TO_DEFENSE         = 50.0;
-    public static final String AUTOKEY_DISTANCE_OVER_DEFENSE    = "DistanceOverDefesne";
-    public static final double AUTO_DISTANCE_OVER_DEFENSE       = 125.0;
-    public static final String AUTOKEY_DISTANCE_TO_TOWER        = "DistanceToTower";
-    public static final double AUTO_DISTANCE_TO_TOWER           = 205.0;
-    public static final String AUTOKEY_TURN_TO_TOWER            = "TurnToTower";
-    public static final double AUTO_TURN_TO_TOWER               = 60.0;
-    public static final String AUTOKEY_DISTANCE_TO_GOAL         = "DistanceToGoal";
-    public static final double AUTO_DISTANCE_TO_GOAL            = 138.0;
+    public static final double AUTO_DISTANCE_CROSS_DEFENSE      = 130.0;
 
 }   //class RobotInfo

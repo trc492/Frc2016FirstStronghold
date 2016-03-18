@@ -3,6 +3,7 @@ package frc492;
 import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcStateMachine;
+import trclib.TrcTimer;
 import trclib.TrcRobot.AutoStrategy;
 
 public class AutoTeeterTotter implements AutoStrategy 
@@ -11,11 +12,12 @@ public class AutoTeeterTotter implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToTeeterTotter;
-    private double distanceApproachTeeterTotter;
-    private double distanceOverTeeterTotter;
+    private double distanceToDefense;
+    private double distanceApproachDefense;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
+    private TrcTimer timer;
 
     public enum State
     {
@@ -29,14 +31,15 @@ public class AutoTeeterTotter implements AutoStrategy
     public AutoTeeterTotter(Robot robot)
     {
         this.robot = robot;
-        distanceToTeeterTotter = HalDashboard.getNumber(
-                "DistanceToTeeterTotter", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceApproachTeeterTotter = HalDashboard.getNumber(
-                "DistanceApproachTeeterTotter", distanceToTeeterTotter + 20.0);
-        distanceOverTeeterTotter = HalDashboard.getNumber(
-                "DistanceOverTeeterTotter", distanceToTeeterTotter + 68.0);
+        distanceToDefense = HalDashboard.getNumber(
+                "1.TeeterTotter:DistanceToDefense", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceApproachDefense = HalDashboard.getNumber(
+                "2.TeeterTotter:DistanceApproachDefense", 70.0);
+        distanceCrossDefense = HalDashboard.getNumber(
+                "3.TeeterTotter:DistanceCrossDefense", distanceCrossDefense);
         sm = new TrcStateMachine (moduleName);
         event = new TrcEvent (moduleName);
+        timer = new TrcTimer(moduleName);
         sm.start(State.DRIVE_TO_TEETER_TOTTER);
     }
 
@@ -58,7 +61,8 @@ public class AutoTeeterTotter implements AutoStrategy
             {
                 case DRIVE_TO_TEETER_TOTTER:
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToTeeterTotter, 0, false, event, 2.0);
+                    robot.arm.setPower(1.0, 1.0);
+                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.APPROACH_TEETER_TOTTER);
                     break;
@@ -66,27 +70,31 @@ public class AutoTeeterTotter implements AutoStrategy
                 case APPROACH_TEETER_TOTTER:
                     robot.encoderYPidCtrl.setOutputRange(-0.3, 0.3);
                     robot.pidDrive.setTarget(
-                            0.0, distanceApproachTeeterTotter, 0, false, event, 2.0);
+                            0.0, distanceApproachDefense, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.LOWER_ARMS);
                     break;
 
                 case LOWER_ARMS:
-                    robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 0.0);
+//                    robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 0.0);
+                    robot.arm.setPower(1.0, false);
+                    timer.set(1.0, event);
                     sm.addEvent(event);
                     sm.waitForEvents(State.OVER_TEETER_TOTTER);
                     break;
 
                 case OVER_TEETER_TOTTER:
+                    robot.arm.setPower(1.0, 2.0);
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceOverTeeterTotter, false, event, 5.0);
+                    robot.pidDrive.setTarget(0.0, distanceCrossDefense, false, event, 5.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;
 
                 case DONE:
                 default:
-                    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+//                    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+                    robot.arm.setPower(-1.0, 2.0);
                     sm.stop();
                     break;
             }

@@ -11,22 +11,23 @@ public class AutoRoughTerrain implements TrcRobot.AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
 
     private enum State
     {
-        DRIVE_OVER_DEFENSE,
+        DRIVE_CROSS_ROUGH_TERRAIN,
         DONE
     }
 
     public AutoRoughTerrain(Robot robot)
     {
         this.robot = robot;
-        
+        distanceCrossDefense = HalDashboard.getNumber("1.RoughTerrain:DistanceCrossDefense", 144.0);
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
-        sm.start(State.DRIVE_OVER_DEFENSE);
+        sm.start(State.DRIVE_CROSS_ROUGH_TERRAIN);
      }   //AutoRoughTerrain
 
     //
@@ -50,9 +51,9 @@ public class AutoRoughTerrain implements TrcRobot.AutoStrategy
 
             switch (state)
             {
-                case DRIVE_OVER_DEFENSE:
+                case DRIVE_CROSS_ROUGH_TERRAIN:
                     robot.encoderYPidCtrl.setOutputRange(-0.7, 0.7);
-                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event);
+                    robot.pidDrive.setTarget(0.0, distanceCrossDefense, 0.0, false, event);
                     robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);// 12 feet
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);

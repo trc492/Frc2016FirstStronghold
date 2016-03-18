@@ -11,6 +11,7 @@ public class AutoMoat implements TrcRobot.AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
 
@@ -23,6 +24,7 @@ public class AutoMoat implements TrcRobot.AutoStrategy
     public AutoMoat(Robot robot)
     {
         this.robot = robot;
+        distanceCrossDefense = HalDashboard.getNumber("1.Moat:DistanceCrossDefense", 144.0);
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
         sm.start(State.DRIVE_OVER_MOAT);
@@ -51,8 +53,9 @@ public class AutoMoat implements TrcRobot.AutoStrategy
             {
                 case DRIVE_OVER_MOAT:
                     robot.encoderYPidCtrl.setOutputRange(-0.6, 0.6);
-                    robot.pidDrive.setTarget(0.0, 144.0, 0.0, false, event);
-                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                    robot.pidDrive.setTarget(0.0, distanceCrossDefense, 0.0, false, event);
+//                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                    robot.arm.setPower(1.0,  1.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;

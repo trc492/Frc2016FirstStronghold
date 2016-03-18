@@ -8,8 +8,9 @@ import trclib.TrcDbgTrace;
 import trclib.TrcEvent;
 import trclib.TrcPidController;
 import trclib.TrcPidMotor;
+import trclib.TrcTimer;
 
-public class Arm implements TrcPidController.PidInput
+public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
 {
     private static final String moduleName = "Arm";
     private static final boolean debugEnabled = false;
@@ -20,6 +21,7 @@ public class Arm implements TrcPidController.PidInput
     private FrcCANTalon rightMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
+    private TrcTimer timer;
 
     public Arm()
     {
@@ -56,6 +58,8 @@ public class Arm implements TrcPidController.PidInput
                 RobotInfo.ARM_SYNC_GAIN,
                 pidCtrl); 
         pidMotor.setPositionScale(RobotInfo.ARM_DEGREES_PER_COUNT);
+
+        timer = new TrcTimer(moduleName);
     }
 
     public void setLimitSwitchesEnabled(boolean enabled)
@@ -125,6 +129,12 @@ public class Arm implements TrcPidController.PidInput
         pidMotor.zeroCalibrate(RobotInfo.ARM_CAL_POWER);
     }
 
+    public void setPower(double power, double time)
+    {
+        pidMotor.setPower(power, false);
+        timer.set(time, this);
+    }
+
     public void setPower(double power, boolean syncEnabled)
     {
         if (debugEnabled)
@@ -140,7 +150,7 @@ public class Arm implements TrcPidController.PidInput
         // limit switch and encoder. So if any of these are malfunctioning, we need a way
         // to still control the arm in a reasonable fashion.
         //
-        pidMotor.setPower(power, syncEnabled);
+        pidMotor.setPower(power, false);
     }
 
     //
@@ -158,5 +168,15 @@ public class Arm implements TrcPidController.PidInput
 
         return value;
     }   //getInput
+
+    //
+    // Implements TrcTimer.Callback
+    //
+
+    @Override
+    public void timerCallback(TrcTimer timer, boolean canceled)
+    {
+        pidMotor.setPower(0.0);
+    }   //startTask
 
 }   //class Arm

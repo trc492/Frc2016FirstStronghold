@@ -4,6 +4,7 @@ import hallib.HalDashboard;
 import trclib.TrcEvent;
 import trclib.TrcRobot.AutoStrategy;
 import trclib.TrcStateMachine;
+import trclib.TrcTimer;
 
 /*
 Autonomous for ramparts
@@ -17,11 +18,12 @@ public class AutoRamparts implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToRamparts;
-    private double distanceApproachRamparts;
-    private double distanceOverRamparts;
+    private double distanceToDefense;
+    private double distanceApproachDefense;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
+    private TrcTimer timer;
 
     // state machine
     private enum State
@@ -38,14 +40,15 @@ public class AutoRamparts implements AutoStrategy
     public AutoRamparts (Robot robot)
     {
         this.robot = robot;
-        distanceToRamparts = HalDashboard.getNumber(
-                "DistanceToRamparts", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
-        distanceApproachRamparts = HalDashboard.getNumber(
-                "DistanceCrossRamparts", distanceToRamparts + 20.0);
-        distanceOverRamparts = HalDashboard.getNumber(
-                "DistanceOverRamparts", distanceToRamparts + 60.0);
+        distanceToDefense = HalDashboard.getNumber(
+                "1.Ramparts:DistanceToDefense", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceApproachDefense = HalDashboard.getNumber(
+                "2.Ramparts:DistanceCrossDefense", 70.0);
+        distanceCrossDefense = HalDashboard.getNumber(
+                "3.Ramparts:DistanceCrossDefense", RobotInfo.AUTO_DISTANCE_CROSS_DEFENSE);
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
+        timer = new TrcTimer(moduleName);
         sm.start(State.DRIVE_TO_RAMPARTS);
     }
 
@@ -70,8 +73,9 @@ public class AutoRamparts implements AutoStrategy
                  * drive to defense fast, put arms up
                  */
                 robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                robot.pidDrive.setTarget(0.0, distanceToRamparts, 0.0, false, event, 2.0);
-                robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
+//                robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
+                robot.arm.setPower(1.0, 1.0);
                 sm.addEvent(event);
                 sm.waitForEvents(State.APPROACH_RAMPARTS);
                 break;
@@ -81,7 +85,7 @@ public class AutoRamparts implements AutoStrategy
                  * drive forward to the ramparts slowly
                  */
                 robot.encoderYPidCtrl.setOutputRange(-.3, .3);
-                robot.pidDrive.setTarget(0.0, distanceApproachRamparts, 0.0, false, event, 2.0);
+                robot.pidDrive.setTarget(0.0, distanceApproachDefense, 0.0, false, event, 2.0);
                 sm.addEvent(event);
                 sm.waitForEvents(State.LOWER_ARMS);
                 break;
@@ -90,7 +94,9 @@ public class AutoRamparts implements AutoStrategy
                 /*
                  * lower arms to push up robot
                  */
-                robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 1.0);
+//                robot.arm.setPosition(RobotInfo.ARM_DOWN_POSITION, event, 1.0);
+                robot.arm.setPower(1.0, false);
+                timer.set(1.0, event);
                 sm.addEvent(event);
                 sm.waitForEvents(State.OVER_RAMPARTS);
                 break;
@@ -99,7 +105,8 @@ public class AutoRamparts implements AutoStrategy
                 /*
                  * drive over ramparts 30%
                  */
-                robot.pidDrive.setTarget(0.0, distanceOverRamparts, 0.0, false, event, 1.0);
+                robot.arm.setPower(1.0, 1.0);
+                robot.pidDrive.setTarget(0.0, distanceCrossDefense, 0.0, false, event, 1.0);
                 sm.addEvent(event);
                 sm.waitForEvents(State.DONE);
                 break;

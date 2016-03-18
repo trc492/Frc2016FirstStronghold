@@ -17,10 +17,10 @@ public class AutoPortcullis implements AutoStrategy
     private HalDashboard dashboard = HalDashboard.getInstance();
 
     private Robot robot;
-    private double distanceToPortcullis;
+    private double distanceToDefense;
     private double armOutPosition;
-    private double distanceThroughPortcullis;
-    private double distanceUnderPortcullis;
+    private double distanceApproachDefense;
+    private double distanceCrossDefense;
     private TrcStateMachine sm;
     private TrcEvent event;
 
@@ -28,7 +28,7 @@ public class AutoPortcullis implements AutoStrategy
     private enum State
     {
         DRIVE_TO_PORTCULLIS,
-        THROUGH_PORTCULLIS,
+        APPROACH_PORTCULLIS,
         UNDER_PORTCULLIS,
         DONE
     }
@@ -37,14 +37,14 @@ public class AutoPortcullis implements AutoStrategy
     public AutoPortcullis (Robot robot)
     {
         this.robot = robot;
-        distanceToPortcullis = HalDashboard.getNumber(
-                "DistanceToPortcullis", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
+        distanceToDefense = HalDashboard.getNumber(
+                "1.Portcullis:DistanceToDefense", RobotInfo.AUTO_DISTANCE_TO_DEFENSE);
         armOutPosition = HalDashboard.getNumber(
-                "ArmOutPosition", RobotInfo.ARM_OUT_POSITION);
-        distanceThroughPortcullis = HalDashboard.getNumber(
-                "DistanceThroughPortcullis", distanceToPortcullis + 20.0);
-        distanceUnderPortcullis = HalDashboard.getNumber(
-                "DistanceUnderPortcullis", distanceToPortcullis + 60.0);
+                "2.Portcullis:ArmOutPosition", RobotInfo.ARM_OUT_POSITION);
+        distanceApproachDefense = HalDashboard.getNumber(
+                "3.Portcullis:DistanceApproachDefense", 70.0);
+        distanceCrossDefense = HalDashboard.getNumber(
+                "4.Portcullis:DistanceCrossDefense", RobotInfo.AUTO_DISTANCE_CROSS_DEFENSE);
 
         sm = new TrcStateMachine(moduleName);
         event = new TrcEvent(moduleName);
@@ -71,18 +71,19 @@ public class AutoPortcullis implements AutoStrategy
                     // drive up to the defense full speed, lower arms
                     //
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
-                    robot.pidDrive.setTarget(0.0, distanceToPortcullis, 0.0, false, event, 2.0);
-                    robot.arm.setPosition(armOutPosition);
+                    robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
+//                    robot.arm.setPosition(armOutPosition);
+                    robot.arm.setPower(1.0, armOutPosition);
                     sm.addEvent(event);
-                    sm.waitForEvents(State.THROUGH_PORTCULLIS);
+                    sm.waitForEvents(State.APPROACH_PORTCULLIS);
                     break;
 
-                case THROUGH_PORTCULLIS:
+                case APPROACH_PORTCULLIS:
                     //
                     // drive to the portcullis at 30% speed
                     //
                     robot.encoderYPidCtrl.setOutputRange(-.3, .3);
-                    robot.pidDrive.setTarget(0.0, distanceThroughPortcullis, 0.0, false, event, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceApproachDefense, 0.0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.UNDER_PORTCULLIS);
                     break;
@@ -92,8 +93,9 @@ public class AutoPortcullis implements AutoStrategy
                     // lift the gate and drive slowly under the port at 50% power
                     //
                     robot.encoderYPidCtrl.setOutputRange(-.5, .5);
-                    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
-                    robot.pidDrive.setTarget(0.0, distanceUnderPortcullis, 0, false, event, 2.0);
+//                    robot.arm.setPosition(RobotInfo.ARM_UP_POSITION);
+                    robot.arm.setPower(-1.0, 2.0);
+                    robot.pidDrive.setTarget(0.0, distanceCrossDefense, 0, false, event, 2.0);
                     sm.addEvent(event);
                     sm.waitForEvents(State.DONE);
                     break;
