@@ -73,7 +73,7 @@ public class AutoLowBar implements TrcRobot.AutoStrategy
                     robot.encoderYPidCtrl.setOutputRange(-0.5, 0.5);
                     robot.pidDrive.setTarget(0.0, distanceToDefense, 0.0, false, event, 2.0);
 //                    robot.arm.setPosition(RobotInfo.ARM_OUT_POSITION);
-                    robot.arm.setPower(1.0, 1.0);
+                    robot.arm.setPower(1.0, 0.85);
                     sm.addEvent(event);
                     sm.waitForEvents(State.CROSS_LOWBAR);
                     break;

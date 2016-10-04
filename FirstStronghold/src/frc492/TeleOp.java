@@ -1,5 +1,6 @@
 package frc492;
 
+import edu.wpi.first.wpilibj.Relay;
 import frclib.FrcJoystick;
 import frclib.FrcRobotBase;
 import hallib.HalDashboard;
@@ -22,6 +23,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     }   //enum DriveMode
 
     protected Robot robot;
+    private HalDashboard dashboard = HalDashboard.getInstance();
 
     //
     // Input subsystem.
@@ -36,6 +38,8 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
     private TrcBooleanState rightLightFlashingToggle =
             new TrcBooleanState("rightLightFlashing", false);
     private TrcBooleanState armManualOverride = new TrcBooleanState("ArmManualOverride", false);
+    private TrcBooleanState targetLightPowerToggle =
+            new TrcBooleanState("targetLightPowerToggle", false);
     private boolean slowDriveOverride = false;
     private boolean sampleTilterAngle = false;
     private double prevTilterAngle = RobotInfo.TILTER_MIN_ANGLE;
@@ -177,6 +181,9 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
 
     public void joystickButtonEvent(FrcJoystick joystick, int button, boolean pressed)
     {
+        dashboard.displayPrintf(
+                15, "%s: 0x%04x -> %s",
+                joystick.toString(), button, pressed? "Pressed": "Released");
         if (joystick == leftDriveStick)
         {
             switch (button)
@@ -273,6 +280,14 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON8:
+                    if (pressed)
+                    {
+                        targetLightPowerToggle.toggleState();
+                        robot.targetLightPower.set(
+                                targetLightPowerToggle.getState()?
+                                Relay.Value.kOn: Relay.Value.kOff);
+                    }
+                    /*
                     if (debugVision)
                     {
                         if (pressed && robot.visionTarget != null)
@@ -281,6 +296,7 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                                     ringLightPowerToggle.toggleState());
                         }
                     }
+                    */
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON9:
@@ -401,9 +417,18 @@ public class TeleOp implements TrcRobot.RobotMode, FrcJoystick.ButtonHandler
                 case FrcJoystick.LOGITECH_BUTTON4:
                     if (pressed)
                     {
+                        targetLightPowerToggle.toggleState();
+                        robot.targetLightPower.set(
+                                targetLightPowerToggle.getState()?
+                                Relay.Value.kOn: Relay.Value.kOff);
+                    }
+                    /*
+                    if (pressed)
+                    {
                         robot.crane.setTilterAngle(70.0);
                         robot.crane.setCraneLength(RobotInfo.CRANE_MAX_LENGTH);
                     }
+                    */
                     break;
 
                 case FrcJoystick.LOGITECH_BUTTON5:

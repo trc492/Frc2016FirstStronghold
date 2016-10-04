@@ -132,6 +132,8 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     public void setPower(double power, double time)
     {
         pidMotor.setPower(power, false);
+//        leftMotor.set(power);
+//        rightMotor.set(power);
         timer.set(time, this);
     }
 
@@ -176,7 +178,9 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     @Override
     public void timerCallback(TrcTimer timer, boolean canceled)
     {
-        pidMotor.setPower(0.0);
+//        pidMotor.setPower(0.0);
+        leftMotor.set(0.0);
+        rightMotor.set(0.0);
     }   //startTask
 
 }   //class Arm

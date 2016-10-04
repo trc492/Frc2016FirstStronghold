@@ -47,7 +47,8 @@ public class RobotInfo
     //
     // Relay channels.
     //
-    public static final int RELAY_RINGLIGHT_POWER       = 0;
+    public static final int RELAY_RINGLIGHT_POWER       = 1;
+    public static final int RELAY_TARGETLIGHT_POWER     = 0;
 
     //
     // Solenoid channels.

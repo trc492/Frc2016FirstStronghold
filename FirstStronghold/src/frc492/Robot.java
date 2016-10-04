@@ -9,6 +9,7 @@ import com.ni.vision.NIVision.ShapeMode;
 
 import edu.wpi.first.wpilibj.CANTalon;
 import edu.wpi.first.wpilibj.CameraServer;
+import edu.wpi.first.wpilibj.Relay;
 import frclib.FrcADXRS450Gyro;
 import frclib.FrcCANTalon;
 import frclib.FrcDigitalRGB;
@@ -90,6 +91,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
     public FrcCANTalon pickup;
     public FrcDigitalRGB leftLight;
     public FrcDigitalRGB rightLight;
+    public Relay targetLightPower;
 
     //
     // Vision target subsystem.
@@ -328,6 +330,9 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
             leftLight = null;
             rightLight = null;
         }
+
+        targetLightPower = new Relay(
+                RobotInfo.RELAY_TARGETLIGHT_POWER, Relay.Direction.kForward);
 
         //
         // Vision subsystem.
