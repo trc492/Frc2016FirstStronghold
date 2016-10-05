@@ -17,29 +17,29 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     private TrcDbgTrace dbgTrace = debugEnabled? FrcRobotBase.getRobotTracer(): null;
 
     private HalDashboard dashboard = HalDashboard.getInstance();
-    private FrcCANTalon leftMotor;
-    private FrcCANTalon rightMotor;
+    private FrcCANTalon armMotor;
     private TrcPidController pidCtrl;
     private TrcPidMotor pidMotor;
     private TrcTimer timer;
 
     public Arm()
     {
-        leftMotor = new FrcCANTalon(RobotInfo.CANID_LEFT_ARM);
-        rightMotor = new FrcCANTalon(RobotInfo.CANID_RIGHT_ARM);
-        leftMotor.setInverted(false);
-        rightMotor.setInverted(false);
-        leftMotor.setPositionSensorInverted(false);
-        rightMotor.setPositionSensorInverted(false);
-        leftMotor.enableLimitSwitch(true, true);
-        leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
-        leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-        leftMotor.setLimitSwitchesSwapped(false);
-        rightMotor.setLimitSwitchesSwapped(false);
-        leftMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
-        rightMotor.setFeedbackDevice(FeedbackDevice.AnalogPot);
+        armMotor = new FrcCANTalon(RobotInfo.CANID_ARM);
+
+        //Invert motor direction: arm should go down on positive power value.
+        armMotor.setInverted(false);
+
+        //Invert encoder: encode value should increase while arm going down.
+        armMotor.setPositionSensorInverted(false);
+
+        armMotor.enableLimitSwitch(true, true);
+        armMotor.ConfigRevLimitSwitchNormallyOpen(false);
+        armMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+
+        //Swap the two limit switches: lower limit switch should stop arm going down.
+        armMotor.setLimitSwitchesSwapped(false);
+
+        armMotor.setFeedbackDevice(FeedbackDevice.QuadEncoder);
 
         pidCtrl = new TrcPidController(
                 moduleName,
@@ -52,11 +52,9 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
                 this);
         pidCtrl.setAbsoluteSetPoint(true);
 
-        pidMotor = new TrcPidMotor(
-                moduleName,
-                leftMotor, rightMotor,
-                RobotInfo.ARM_SYNC_GAIN,
-                pidCtrl); 
+        pidMotor = new TrcPidMotor(moduleName, armMotor, pidCtrl);
+
+        //Need to determine degrees per encoder count
         pidMotor.setPositionScale(RobotInfo.ARM_DEGREES_PER_COUNT);
 
         timer = new TrcTimer(moduleName);
@@ -66,17 +64,13 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     {
         if (enabled)
         {
-            leftMotor.enableLimitSwitch (true, true);
-            rightMotor.enableLimitSwitch(true, true);
-            leftMotor.ConfigRevLimitSwitchNormallyOpen(false);
-            rightMotor.ConfigRevLimitSwitchNormallyOpen(false);
-            leftMotor.ConfigFwdLimitSwitchNormallyOpen(false);
-            rightMotor.ConfigFwdLimitSwitchNormallyOpen(false);
+            armMotor.enableLimitSwitch (true, true);
+            armMotor.ConfigRevLimitSwitchNormallyOpen(false);
+            armMotor.ConfigFwdLimitSwitchNormallyOpen(false);
         }
         else
         {
-            leftMotor.enableLimitSwitch (false, false);
-            rightMotor.enableLimitSwitch(false, false);
+            armMotor.enableLimitSwitch (false, false);
         }
     }
 
@@ -88,14 +82,12 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     public void displayDebugInfo(int lineNum)
     {
         dashboard.displayPrintf(
-                lineNum, "Arm: lPos=%.2f, rPos=%.2f",
-                leftMotor.getPosition(), rightMotor.getPosition());
+                lineNum, "Arm: Pos=%.2f",
+                armMotor.getPosition());
         dashboard.displayPrintf(
-                lineNum + 1, "Arm: lSW=%d/%d, rSW=%d/%d",
-                leftMotor.isLowerLimitSwitchActive()? 1: 0,
-                leftMotor.isUpperLimitSwitchActive()? 1: 0,
-                rightMotor.isLowerLimitSwitchActive()? 1: 0,
-                rightMotor.isUpperLimitSwitchActive()? 1: 0);
+                lineNum + 1, "Arm: SW=%d/%d",
+                armMotor.isLowerLimitSwitchActive()? 1: 0,
+                armMotor.isUpperLimitSwitchActive()? 1: 0);
         pidCtrl.displayPidInfo(lineNum + 2);
     }
 
@@ -114,14 +106,9 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
         return pidMotor.getPosition();
     }
 
-    public double getLeftRawPosition()
+    public double getRawPosition()
     {
-        return leftMotor.getPosition();
-    }
-
-    public double getRightRawPosition()
-    {
-        return leftMotor.getPosition();
+        return armMotor.getPosition();
     }
 
     public void zeroCalibrate()
@@ -132,8 +119,6 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     public void setPower(double power, double time)
     {
         pidMotor.setPower(power, false);
-//        leftMotor.set(power);
-//        rightMotor.set(power);
         timer.set(time, this);
     }
 
@@ -142,8 +127,8 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
         if (debugEnabled)
         {
             dbgTrace.traceInfo(
-                    moduleName, "Arm: power=%.2f, lPos=%.0f, rPos=%.0f",
-                    power, leftMotor.getPosition(), rightMotor.getPosition());
+                    moduleName, "Arm: power=%.2f, Pos=%.0f",
+                    power, armMotor.getPosition());
         }
 
         //
@@ -179,8 +164,7 @@ public class Arm implements TrcPidController.PidInput, TrcTimer.Callback
     public void timerCallback(TrcTimer timer, boolean canceled)
     {
 //        pidMotor.setPower(0.0);
-        leftMotor.set(0.0);
-        rightMotor.set(0.0);
+        armMotor.set(0.0);
     }   //startTask
 
 }   //class Arm

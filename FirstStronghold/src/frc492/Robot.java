@@ -453,8 +453,7 @@ public class Robot extends FrcRobotBase implements TrcPidController.PidInput,
             if (debugArm)
             {
                 arm.displayDebugInfo(9);
-                HalDashboard.putNumber("LeftArmPos", arm.getLeftRawPosition());
-                HalDashboard.putNumber("RightArmPos", arm.getRightRawPosition());
+                HalDashboard.putNumber("ArmPos", arm.getRawPosition());
             }
 
             if (debugCrane)
